@@ -114,6 +114,88 @@ export interface OrderDeliveryReceipt {
   uploadedBy: OrderUser;
 }
 
+export interface OrderDetailProduct {
+  id: string;
+  model: {
+    modelId: string;
+    modelOwner: string;
+    title: string;
+    description: string;
+    price: number;
+    images: string[];
+    fileUrl: string;
+  };
+  quantity: number;
+  color: string;
+}
+
+export interface OrderDetailShippingAddress {
+  label: string;
+  street: string;
+  city: string;
+  state: string;
+  fullName: string;
+  zipCode: string;
+  country: string;
+  id: string;
+}
+
+export interface OrderDetailPayment {
+  amount: number;
+  status: string;
+  gateway: string;
+  transactionId: string;
+  orderGroupId: string;
+  receivedAmount: number;
+  id: string;
+  calculateRefundableAmount: number;
+}
+
+export interface OrderDetail {
+  buyerId: OrderUser;
+  sellerId: OrderUser;
+  orderAssignedAt: string | null;
+  orderDeliveredAt: string | null;
+  orderId: string;
+  orderGroupId: string;
+  products: OrderDetailProduct[];
+  shippingAddress: OrderDetailShippingAddress;
+  status:
+    | "pending"
+    | "processing"
+    | "shipped"
+    | "picked"
+    | "transit"
+    | "delivered"
+    | "cancelled";
+  timeline: OrderTimelineEvent[];
+  subTotal: number;
+  shippingAmount: number;
+  totalAmount: number;
+  promoCode: any;
+  platformEarning: number;
+  creatorRoyalty: number;
+  manufacturerCost: number;
+  affiliateCost: number;
+  processingFees: number;
+  walletSynced: boolean;
+  stlGenerationStatus: "not_started" | "in_progress" | "completed" | "failed";
+  trackingEvents: OrderTrackingEvent[];
+  createdAt: string;
+  paymentId: string;
+  manufacturerId?: OrderUser;
+  payment: OrderDetailPayment;
+  id: string;
+}
+
+export interface OrderDetailResponse {
+  status: string;
+  code: number;
+  message: string;
+  data: OrderDetail;
+  errors: any[];
+}
+
 export interface Order {
   id: string;
   orderId: string;

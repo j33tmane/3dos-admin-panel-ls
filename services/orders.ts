@@ -1,6 +1,6 @@
 // Orders service for handling order-related API calls
 import { apiService } from "./api";
-import { OrdersResponse, OrdersParams } from "@/types";
+import { OrdersResponse, OrdersParams, OrderDetailResponse } from "@/types";
 
 class OrdersService {
   /**
@@ -18,7 +18,8 @@ class OrdersService {
     if (params.orderId) queryParams.append("orderId", params.orderId);
     if (params.buyerId) queryParams.append("buyerId", params.buyerId);
     if (params.sellerId) queryParams.append("sellerId", params.sellerId);
-    if (params.manufacturerId) queryParams.append("manufacturerId", params.manufacturerId);
+    if (params.manufacturerId)
+      queryParams.append("manufacturerId", params.manufacturerId);
     if (params.startDate) queryParams.append("startDate", params.startDate);
     if (params.endDate) queryParams.append("endDate", params.endDate);
     if (params.sortBy) queryParams.append("sortBy", params.sortBy);
@@ -34,6 +35,13 @@ class OrdersService {
    */
   async getOrderById(orderId: string): Promise<OrdersResponse> {
     return apiService.get<OrdersResponse>(`/admin/orders/${orderId}`);
+  }
+
+  /**
+   * Get detailed order information by order number
+   */
+  async getOrderDetails(orderNumber: string): Promise<OrderDetailResponse> {
+    return apiService.get<OrderDetailResponse>(`/admin/orders/${orderNumber}`);
   }
 
   /**

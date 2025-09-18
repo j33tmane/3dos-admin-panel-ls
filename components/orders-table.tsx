@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   MoreHorizontal,
   Eye,
@@ -81,6 +82,7 @@ export function OrdersTable({
   onPageChange,
   onRefresh,
 }: OrdersTableProps) {
+  const router = useRouter();
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
 
   const toggleOrder = (orderId: string) => {
@@ -121,6 +123,10 @@ export function OrdersTable({
       order.paymentId.gateway.charAt(0).toUpperCase() +
       order.paymentId.gateway.slice(1)
     );
+  };
+
+  const handleViewDetails = (orderId: string) => {
+    router.push(`/orders/${orderId}`);
   };
 
   if (error) {
@@ -384,7 +390,9 @@ export function OrdersTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleViewDetails(order.orderId)}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
