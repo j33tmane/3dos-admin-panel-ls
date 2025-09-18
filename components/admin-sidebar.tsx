@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   BarChart3,
   Building2,
@@ -35,70 +36,36 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-
-const data = {
-  user: {
-    name: "John Doe",
-    email: "john@example.com",
-    avatar: "/admin-avatar.png",
-  },
-  navMain: [
-    {
-      title: "Overview",
-      items: [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: Home,
-        },
-        {
-          title: "Analytics",
-          url: "/analytics",
-          icon: BarChart3,
-        },
-      ],
-    },
-    {
-      title: "Management",
-      items: [
-        {
-          title: "Users",
-          url: "/users",
-          icon: Users,
-        },
-        {
-          title: "Products",
-          url: "/products",
-          icon: ShoppingCart,
-        },
-        {
-          title: "Orders",
-          url: "/orders",
-          icon: CreditCard,
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      items: [
-        {
-          title: "General",
-          url: "/settings",
-          icon: Settings,
-        },
-        {
-          title: "Organization",
-          url: "/organization",
-          icon: Building2,
-        },
-      ],
-    },
-  ],
-};
+import { authService } from "@/services";
+import { User } from "@/types";
+import { NAVIGATION_ITEMS } from "@/constants";
+import { formatInitials } from "@/utils";
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get user from localStorage on component mount
+    const storedUser = authService.getUser();
+    setUser(storedUser);
+
+    // Debug: Log stored user data
+    if (storedUser) {
+      console.log("👤 User loaded in sidebar:", storedUser);
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      router.replace("/login");
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -120,7 +87,7 @@ export function AdminSidebar() {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {data.navMain.map((item) => (
+        {NAVIGATION_ITEMS.map((item) => (
           <SidebarGroup key={item.title}>
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -151,16 +118,20 @@ export function AdminSidebar() {
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
                     <AvatarImage
-                      src={data.user.avatar || "/placeholder.svg"}
-                      alt={data.user.name}
+                      src="/admin-avatar.png"
+                      alt={user?.fullName || "User"}
                     />
-                    <AvatarFallback className="rounded-lg">JD</AvatarFallback>
+                    <AvatarFallback className="rounded-lg">
+                      {user?.fullName ? formatInitials(user.fullName) : "U"}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {data.user.name}
+                      {user?.fullName || "User"}
                     </span>
-                    <span className="truncate text-xs">{data.user.email}</span>
+                    <span className="truncate text-xs">
+                      {user?.email || "user@example.com"}
+                    </span>
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>
@@ -183,11 +154,7 @@ export function AdminSidebar() {
                   <Settings />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => {
-                    router.replace("/login");
-                  }}
-                >
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut />
                   Log out
                 </DropdownMenuItem>

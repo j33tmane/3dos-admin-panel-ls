@@ -20,8 +20,8 @@ export default function Register() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simple redirect to dashboard - no registration logic
-    router.replace("/dashboard");
+    // For now, redirect to login page since registration might need different flow
+    router.replace("/login");
   };
 
   return (
