@@ -147,7 +147,9 @@ export default function OrderDetailPage() {
     );
   }
 
-  const StatusIcon = statusIcons[order.status as keyof typeof statusIcons];
+  const StatusIcon = order.status
+    ? statusIcons[order.status as keyof typeof statusIcons]
+    : Package;
 
   return (
     <SidebarInset>
@@ -178,10 +180,13 @@ export default function OrderDetailPage() {
               <Badge
                 variant="secondary"
                 className={
+                  order.status &&
                   statusColors[order.status as keyof typeof statusColors]
+                    ? statusColors[order.status as keyof typeof statusColors]
+                    : "bg-gray-100 text-gray-800"
                 }
               >
-                {order.status}
+                {order.status || "N/A"}
               </Badge>
             </div>
           </CardHeader>
@@ -202,26 +207,34 @@ export default function OrderDetailPage() {
                   <p className="text-sm font-medium text-muted-foreground">
                     Order ID
                   </p>
-                  <p className="font-mono">{order.orderId}</p>
+                  <p className="font-mono">{order.orderId || "N/A"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     Order Group ID
                   </p>
-                  <p className="font-mono text-sm">{order.orderGroupId}</p>
+                  <p className="font-mono text-sm">
+                    {order.orderGroupId || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     Created At
                   </p>
-                  <p>{formatDate(new Date(order.createdAt))}</p>
+                  <p>
+                    {order.createdAt
+                      ? formatDate(new Date(order.createdAt))
+                      : "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     STL Status
                   </p>
                   <Badge variant="outline">
-                    {order.stlGenerationStatus.replace("_", " ")}
+                    {order.stlGenerationStatus
+                      ? order.stlGenerationStatus.replace("_", " ")
+                      : "N/A"}
                   </Badge>
                 </div>
               </div>
@@ -243,7 +256,9 @@ export default function OrderDetailPage() {
                     Amount
                   </p>
                   <p className="font-semibold">
-                    {formatCurrency(order.payment.amount)}
+                    {order.payment?.amount
+                      ? formatCurrency(order.payment.amount)
+                      : "N/A"}
                   </p>
                 </div>
                 <div>
@@ -253,26 +268,34 @@ export default function OrderDetailPage() {
                   <Badge
                     variant="secondary"
                     className={
+                      order.payment?.status &&
                       paymentStatusColors[
                         order.payment.status as keyof typeof paymentStatusColors
                       ]
+                        ? paymentStatusColors[
+                            order.payment
+                              .status as keyof typeof paymentStatusColors
+                          ]
+                        : "bg-gray-100 text-gray-800"
                     }
                   >
-                    {order.payment.status}
+                    {order.payment?.status || "N/A"}
                   </Badge>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     Gateway
                   </p>
-                  <p className="capitalize">{order.payment.gateway}</p>
+                  <p className="capitalize">
+                    {order.payment?.gateway || "N/A"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
                     Transaction ID
                   </p>
                   <p className="font-mono text-sm">
-                    {order.payment.transactionId}
+                    {order.payment?.transactionId || "N/A"}
                   </p>
                 </div>
               </div>
@@ -294,19 +317,21 @@ export default function OrderDetailPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Name
                 </p>
-                <p>{order.buyerId.fullName}</p>
+                <p>{order.buyerId?.fullName || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Email
                 </p>
-                <p>{order.buyerId.email}</p>
+                <p>{order.buyerId?.email || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   User ID
                 </p>
-                <p className="font-mono text-sm">{order.buyerId.id}</p>
+                <p className="font-mono text-sm">
+                  {order.buyerId?.id || "N/A"}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -324,54 +349,66 @@ export default function OrderDetailPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Name
                 </p>
-                <p>{order.sellerId.fullName}</p>
+                <p>{order.sellerId?.fullName || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Email
                 </p>
-                <p>{order.sellerId.email}</p>
+                <p>{order.sellerId?.email || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   User ID
                 </p>
-                <p className="font-mono text-sm">{order.sellerId.id}</p>
+                <p className="font-mono text-sm">
+                  {order.sellerId?.id || "N/A"}
+                </p>
               </div>
             </CardContent>
           </Card>
 
           {/* Manufacturer Information */}
-          {order.manufacturerId && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Manufacturer Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Name
-                  </p>
-                  <p>{order.manufacturerId.fullName}</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Manufacturer Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {order.manufacturerId ? (
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Name
+                    </p>
+                    <p>{order.manufacturerId.fullName || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Email
+                    </p>
+                    <p>{order.manufacturerId.email || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      User ID
+                    </p>
+                    <p className="font-mono text-sm">
+                      {order.manufacturerId.id || "N/A"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Email
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">
+                    No manufacturer is assigned to this order
                   </p>
-                  <p>{order.manufacturerId.email}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    User ID
-                  </p>
-                  <p className="font-mono text-sm">{order.manufacturerId.id}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Shipping Address */}
@@ -388,43 +425,43 @@ export default function OrderDetailPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Full Name
                 </p>
-                <p>{order.shippingAddress.fullName}</p>
+                <p>{order.shippingAddress?.fullName || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Label
                 </p>
-                <p>{order.shippingAddress.label}</p>
+                <p>{order.shippingAddress?.label || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Street
                 </p>
-                <p>{order.shippingAddress.street}</p>
+                <p>{order.shippingAddress?.street || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   City
                 </p>
-                <p>{order.shippingAddress.city}</p>
+                <p>{order.shippingAddress?.city || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   State
                 </p>
-                <p>{order.shippingAddress.state}</p>
+                <p>{order.shippingAddress?.state || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Zip Code
                 </p>
-                <p>{order.shippingAddress.zipCode}</p>
+                <p>{order.shippingAddress?.zipCode || "N/A"}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   Country
                 </p>
-                <p>{order.shippingAddress.country}</p>
+                <p>{order.shippingAddress?.country || "N/A"}</p>
               </div>
             </div>
           </CardContent>
@@ -435,51 +472,66 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
-              Products ({order.products.length})
+              Products ({order.products ? order.products.length : 0})
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {order.products.map((product, index) => (
-                <div key={product.id} className="border rounded-lg p-4">
-                  <div className="flex items-start gap-4">
-                    {product.model.images &&
-                      product.model.images.length > 0 && (
-                        <img
-                          src={product.model.images[0]}
-                          alt={product.model.title}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                      )}
-                    <div className="flex-1">
-                      <h4 className="font-semibold">{product.model.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {product.model.description}
-                      </p>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="font-medium text-muted-foreground">
-                            Quantity
-                          </p>
-                          <p>{product.quantity}</p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-muted-foreground">
-                            Color
-                          </p>
-                          <p>{product.color}</p>
-                        </div>
-                        <div>
-                          <p className="font-medium text-muted-foreground">
-                            Price
-                          </p>
-                          <p>{formatCurrency(product.model.price)}</p>
+              {order.products && order.products.length > 0 ? (
+                order.products.map((product, index) => (
+                  <div
+                    key={product.id || `product-${index}`}
+                    className="border rounded-lg p-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      {product.model?.images &&
+                        product.model.images.length > 0 && (
+                          <img
+                            src={product.model.images[0]}
+                            alt={product.model.title || "Product"}
+                            className="w-16 h-16 object-cover rounded-lg"
+                          />
+                        )}
+                      <div className="flex-1">
+                        <h4 className="font-semibold">
+                          {product.model?.title || "N/A"}
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {product.model?.description || "N/A"}
+                        </p>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <p className="font-medium text-muted-foreground">
+                              Quantity
+                            </p>
+                            <p>{product.quantity || "N/A"}</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-muted-foreground">
+                              Color
+                            </p>
+                            <p>{product.color || "N/A"}</p>
+                          </div>
+                          <div>
+                            <p className="font-medium text-muted-foreground">
+                              Price
+                            </p>
+                            <p>
+                              {product.model?.price
+                                ? formatCurrency(product.model.price)
+                                : "N/A"}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No products found
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -493,37 +545,67 @@ export default function OrderDetailPage() {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>{formatCurrency(order.subTotal)}</span>
+                <span>
+                  {order.subTotal ? formatCurrency(order.subTotal) : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>{formatCurrency(order.shippingAmount)}</span>
+                <span>
+                  {order.shippingAmount
+                    ? formatCurrency(order.shippingAmount)
+                    : "N/A"}
+                </span>
               </div>
               <Separator />
               <div className="flex justify-between font-semibold">
                 <span>Total</span>
-                <span>{formatCurrency(order.totalAmount)}</span>
+                <span>
+                  {order.totalAmount
+                    ? formatCurrency(order.totalAmount)
+                    : "N/A"}
+                </span>
               </div>
               <Separator />
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Platform Earning</span>
-                <span>{formatCurrency(order.platformEarning)}</span>
+                <span>
+                  {order.platformEarning
+                    ? formatCurrency(order.platformEarning)
+                    : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Creator Royalty</span>
-                <span>{formatCurrency(order.creatorRoyalty)}</span>
+                <span>
+                  {order.creatorRoyalty
+                    ? formatCurrency(order.creatorRoyalty)
+                    : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Manufacturer Cost</span>
-                <span>{formatCurrency(order.manufacturerCost)}</span>
+                <span>
+                  {order.manufacturerCost
+                    ? formatCurrency(order.manufacturerCost)
+                    : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Affiliate Cost</span>
-                <span>{formatCurrency(order.affiliateCost)}</span>
+                <span>
+                  {order.affiliateCost
+                    ? formatCurrency(order.affiliateCost)
+                    : "N/A"}
+                </span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Processing Fees</span>
-                <span>{formatCurrency(order.processingFees)}</span>
+                <span>
+                  {order.processingFees
+                    ? formatCurrency(order.processingFees)
+                    : "N/A"}
+                </span>
               </div>
             </div>
           </CardContent>
