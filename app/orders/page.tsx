@@ -55,7 +55,7 @@ export default function OrdersPage() {
     if (manufacturerId) params.manufacturerId = manufacturerId;
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    if (sortBy) params.sortBy = sortBy;
+    params.sortBy = sortBy || "-createdAt"; // Always include sortBy with default
 
     return params;
   };

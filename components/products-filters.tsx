@@ -1,4 +1,3 @@
-// File: components/orders-filters.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,27 +14,25 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { OrdersParams } from "@/types";
+import { ProductsParams } from "@/types";
 
-interface OrdersFiltersProps {
-  onFiltersChange: (filters: OrdersParams) => void;
+interface ProductsFiltersProps {
+  onFiltersChange: (filters: ProductsParams) => void;
   loading?: boolean;
 }
 
-export function OrdersFilters({
+export function ProductsFilters({
   onFiltersChange,
   loading = false,
-}: OrdersFiltersProps) {
+}: ProductsFiltersProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [orderId, setOrderId] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [buyerId, setBuyerId] = useState("");
-  const [sellerId, setSellerId] = useState("");
-  const [manufacturerId, setManufacturerId] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [title, setTitle] = useState("");
+  const [material, setMaterial] = useState("");
+  const [status, setStatus] = useState("all");
+  const [isPrivate, setIsPrivate] = useState("all");
+  const [userId, setUserId] = useState("");
   const [sortBy, setSortBy] = useState("-createdAt");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -45,13 +42,11 @@ export function OrdersFilters({
     const clearAll = searchParams.get("clearAll");
     if (clearAll === "true") {
       // Reset all filters to default values
-      setOrderId("");
-      setStatusFilter("all");
-      setBuyerId("");
-      setSellerId("");
-      setManufacturerId("");
-      setStartDate("");
-      setEndDate("");
+      setTitle("");
+      setMaterial("");
+      setStatus("all");
+      setIsPrivate("all");
+      setUserId("");
       setSortBy("-createdAt");
       setShowFilters(false);
 
@@ -59,8 +54,9 @@ export function OrdersFilters({
       const url = new URL(window.location.href);
       url.searchParams.delete("clearAll");
       window.history.replaceState({}, "", url.pathname + (url.search || ""));
+
       // Notify parent with reset filters
-      const resetFilters: OrdersParams = {
+      const resetFilters: ProductsParams = {
         page: 1,
         limit: 10,
       };
@@ -68,66 +64,51 @@ export function OrdersFilters({
       return;
     }
 
-    const urlOrderId = searchParams.get("orderId") || "";
+    const urlTitle = searchParams.get("title") || "";
+    const urlMaterial = searchParams.get("material") || "";
     const urlStatus = searchParams.get("status") || "all";
-    const urlBuyerId = searchParams.get("buyerId") || "";
-    const urlSellerId = searchParams.get("sellerId") || "";
-    const urlManufacturerId = searchParams.get("manufacturerId") || "";
-    const urlStartDate = searchParams.get("startDate") || "";
-    const urlEndDate = searchParams.get("endDate") || "";
+    const urlIsPrivate = searchParams.get("isPrivate") || "all";
+    const urlUserId = searchParams.get("userId") || "";
     const urlSortBy = searchParams.get("sortBy") || "-createdAt";
 
-    setOrderId(urlOrderId);
-    setStatusFilter(urlStatus);
-    setBuyerId(urlBuyerId);
-    setSellerId(urlSellerId);
-    setManufacturerId(urlManufacturerId);
-    setStartDate(urlStartDate);
-    setEndDate(urlEndDate);
+    setTitle(urlTitle);
+    setMaterial(urlMaterial);
+    setStatus(urlStatus);
+    setIsPrivate(urlIsPrivate);
+    setUserId(urlUserId);
     setSortBy(urlSortBy);
 
     // Show filters if any are active
     const hasActiveFilters = Boolean(
-      urlOrderId ||
+      urlTitle ||
+        urlMaterial ||
         urlStatus !== "all" ||
-        urlBuyerId ||
-        urlSellerId ||
-        urlManufacturerId ||
-        urlStartDate ||
-        urlEndDate ||
+        urlIsPrivate !== "all" ||
+        urlUserId ||
         urlSortBy !== "-createdAt"
     );
     setShowFilters(hasActiveFilters);
   }, [searchParams]);
 
   const activeFilters = [];
-  if (orderId)
-    activeFilters.push({ key: "orderId", label: `Order ID: ${orderId}` });
-  if (statusFilter !== "all")
-    activeFilters.push({ key: "status", label: `Status: ${statusFilter}` });
-  if (buyerId)
-    activeFilters.push({ key: "buyerId", label: `Buyer: ${buyerId}` });
-  if (sellerId)
-    activeFilters.push({ key: "sellerId", label: `Seller: ${sellerId}` });
-  if (manufacturerId)
-    activeFilters.push({
-      key: "manufacturerId",
-      label: `Manufacturer: ${manufacturerId}`,
-    });
-  if (startDate)
-    activeFilters.push({ key: "startDate", label: `From: ${startDate}` });
-  if (endDate) activeFilters.push({ key: "endDate", label: `To: ${endDate}` });
+  if (title) activeFilters.push({ key: "title", label: `Title: ${title}` });
+  if (material)
+    activeFilters.push({ key: "material", label: `Material: ${material}` });
+  if (status !== "all")
+    activeFilters.push({ key: "status", label: `Status: ${status}` });
+  if (isPrivate !== "all")
+    activeFilters.push({ key: "isPrivate", label: `Private: ${isPrivate}` });
+  if (userId)
+    activeFilters.push({ key: "userId", label: `User ID: ${userId}` });
   if (sortBy !== "-createdAt")
     activeFilters.push({ key: "sort", label: `Sort: ${sortBy}` });
 
   const clearFilter = (key: string) => {
-    if (key === "orderId") setOrderId("");
-    if (key === "status") setStatusFilter("all");
-    if (key === "buyerId") setBuyerId("");
-    if (key === "sellerId") setSellerId("");
-    if (key === "manufacturerId") setManufacturerId("");
-    if (key === "startDate") setStartDate("");
-    if (key === "endDate") setEndDate("");
+    if (key === "title") setTitle("");
+    if (key === "material") setMaterial("");
+    if (key === "status") setStatus("all");
+    if (key === "isPrivate") setIsPrivate("all");
+    if (key === "userId") setUserId("");
     if (key === "sort") setSortBy("-createdAt");
 
     // The URL will be updated automatically through the notifyFiltersChange effect
@@ -151,13 +132,11 @@ export function OrdersFilters({
     const urlParams = new URLSearchParams();
 
     // Add all non-default filter values to URL
-    if (orderId) urlParams.set("orderId", orderId);
-    if (statusFilter !== "all") urlParams.set("status", statusFilter);
-    if (buyerId) urlParams.set("buyerId", buyerId);
-    if (sellerId) urlParams.set("sellerId", sellerId);
-    if (manufacturerId) urlParams.set("manufacturerId", manufacturerId);
-    if (startDate) urlParams.set("startDate", startDate);
-    if (endDate) urlParams.set("endDate", endDate);
+    if (title) urlParams.set("title", title);
+    if (material) urlParams.set("material", material);
+    if (status !== "all") urlParams.set("status", status);
+    if (isPrivate !== "all") urlParams.set("isPrivate", isPrivate);
+    if (userId) urlParams.set("userId", userId);
     if (sortBy && sortBy !== "-createdAt") urlParams.set("sortBy", sortBy);
 
     // Update URL without page reload
@@ -169,19 +148,17 @@ export function OrdersFilters({
 
   // Notify parent on any filter change
   const notifyFiltersChange = () => {
-    const filters: OrdersParams = {
+    const filters: ProductsParams = {
       page: 1,
       limit: 10,
       sortBy: sortBy, // Always include sortBy
     };
 
-    if (orderId) filters.orderId = orderId;
-    if (statusFilter !== "all") filters.status = statusFilter as any;
-    if (buyerId) filters.buyerId = buyerId;
-    if (sellerId) filters.sellerId = sellerId;
-    if (manufacturerId) filters.manufacturerId = manufacturerId;
-    if (startDate) filters.startDate = startDate;
-    if (endDate) filters.endDate = endDate;
+    if (title) filters.title = title;
+    if (material) filters.material = material;
+    if (status !== "all") filters.status = status === "active";
+    if (isPrivate !== "all") filters.isPrivate = isPrivate === "private";
+    if (userId) filters.userId = userId;
 
     onFiltersChange(filters);
     updateURL(); // Update URL whenever filters change
@@ -190,16 +167,7 @@ export function OrdersFilters({
   // Call whenever any state changes
   useEffect(() => {
     notifyFiltersChange();
-  }, [
-    orderId,
-    statusFilter,
-    buyerId,
-    sellerId,
-    manufacturerId,
-    startDate,
-    endDate,
-    sortBy,
-  ]);
+  }, [title, material, status, isPrivate, userId, sortBy]);
 
   return (
     <Card>
@@ -209,9 +177,9 @@ export function OrdersFilters({
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by Order ID..."
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
+                placeholder="Search by title..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className="pl-8"
                 disabled={loading}
               />
@@ -229,9 +197,17 @@ export function OrdersFilters({
 
           {showFilters && (
             <div className="flex flex-wrap gap-2">
+              <Input
+                placeholder="Material"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                className="w-[140px]"
+                disabled={loading}
+              />
+
               <Select
-                value={statusFilter}
-                onValueChange={setStatusFilter}
+                value={status}
+                onValueChange={setStatus}
                 disabled={loading}
               >
                 <SelectTrigger className="w-[140px]">
@@ -239,54 +215,30 @@ export function OrdersFilters({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="shipped">Shipped</SelectItem>
-                  <SelectItem value="picked">Picked</SelectItem>
-                  <SelectItem value="transit">Transit</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={isPrivate}
+                onValueChange={setIsPrivate}
+                disabled={loading}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Visibility" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="private">Private</SelectItem>
+                  <SelectItem value="public">Public</SelectItem>
                 </SelectContent>
               </Select>
 
               <Input
-                placeholder="Buyer ID"
-                value={buyerId}
-                onChange={(e) => setBuyerId(e.target.value)}
-                className="w-[140px]"
-                disabled={loading}
-              />
-
-              <Input
-                placeholder="Seller ID"
-                value={sellerId}
-                onChange={(e) => setSellerId(e.target.value)}
-                className="w-[140px]"
-                disabled={loading}
-              />
-
-              <Input
-                placeholder="Manufacturer ID"
-                value={manufacturerId}
-                onChange={(e) => setManufacturerId(e.target.value)}
-                className="w-[140px]"
-                disabled={loading}
-              />
-
-              <Input
-                type="date"
-                placeholder="Start Date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-[140px]"
-                disabled={loading}
-              />
-
-              <Input
-                type="date"
-                placeholder="End Date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                placeholder="User ID"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
                 className="w-[140px]"
                 disabled={loading}
               />
@@ -302,9 +254,11 @@ export function OrdersFilters({
                 <SelectContent>
                   <SelectItem value="-createdAt">Newest First</SelectItem>
                   <SelectItem value="createdAt">Oldest First</SelectItem>
-                  <SelectItem value="-totalAmount">Highest Amount</SelectItem>
-                  <SelectItem value="totalAmount">Lowest Amount</SelectItem>
-                  <SelectItem value="status">Status A-Z</SelectItem>
+                  <SelectItem value="-price">Highest Price</SelectItem>
+                  <SelectItem value="price">Lowest Price</SelectItem>
+                  <SelectItem value="-unitsSold">Most Sold</SelectItem>
+                  <SelectItem value="unitsSold">Least Sold</SelectItem>
+                  <SelectItem value="title">Title A-Z</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -320,10 +274,16 @@ export function OrdersFilters({
                   {filter.label}
                   <button
                     type="button"
-                    className="h-3 w-3 cursor-pointer p-0 m-0 bg-transparent border-none outline-none flex items-center justify-center"
-                    aria-label={`Clear filter ${filter.label}`}
+                    className="ml-1 p-0.5 rounded hover:bg-muted transition-colors"
+                    aria-label={`Remove filter ${filter.label}`}
                     onClick={() => clearFilter(filter.key)}
                     disabled={loading}
+                    style={{
+                      lineHeight: 0,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
                     <X className="h-3 w-3" />
                   </button>
