@@ -1,6 +1,11 @@
 // Products service for handling product-related API calls
 import { apiService } from "./api";
-import { ProductsResponse, ProductsParams } from "@/types";
+import {
+  ProductsResponse,
+  ProductsParams,
+  ArchiveProductResponse,
+} from "@/types";
+import { ApiResponse } from "@/types/api";
 
 class ProductsService {
   /**
@@ -58,6 +63,37 @@ class ProductsService {
    */
   async deleteProduct(productId: string): Promise<ProductsResponse> {
     return apiService.delete<ProductsResponse>(`/models/admin/${productId}`);
+  }
+
+  /**
+   * Archive a product
+   */
+  async archiveProduct(modelId: string): Promise<ArchiveProductResponse> {
+    const response: ApiResponse<{
+      modelId: string;
+      title: string;
+      status: boolean;
+      archivedAt: string;
+    }> = await apiService.post<{
+      modelId: string;
+      title: string;
+      status: boolean;
+      archivedAt: string;
+    }>(`/admin/listings/${modelId}/archive`, {});
+
+    // Transform the response to match our expected format
+    return {
+      status: response.status,
+      code: response.code,
+      message: response.message,
+      data: response.data || {
+        modelId: "",
+        title: "",
+        status: false,
+        archivedAt: "",
+      },
+      errors: response.errors,
+    };
   }
 
   /**

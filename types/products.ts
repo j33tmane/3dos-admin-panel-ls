@@ -72,3 +72,16 @@ export interface ProductsParams {
   userId?: string;
   sortBy?: string; // Format: "field:direction" (asc/desc)
 }
+
+export interface ArchiveProductResponse {
+  status: string;
+  code: number;
+  message: string;
+  data: {
+    modelId: string;
+    title: string;
+    status: boolean;
+    archivedAt: string;
+  };
+  errors: any[];
+}

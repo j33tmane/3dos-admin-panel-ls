@@ -5,7 +5,6 @@ import {
   MoreHorizontal,
   Eye,
   Edit,
-  Trash2,
   Package,
   RefreshCw,
   AlertCircle,
@@ -13,6 +12,8 @@ import {
   Unlock,
   Bot,
   User,
+  Archive,
+  ArchiveX,
 } from "lucide-react";
 import {
   Table,
@@ -40,8 +41,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Product, ProductsParams } from "@/types";
+import { Product, ProductsParams, ArchiveProductResponse } from "@/types";
 import { formatCurrency, formatDate } from "@/utils";
+import { productsService } from "@/services";
+import { toast } from "sonner";
 
 interface ProductsTableProps {
   products: Product[];
@@ -66,6 +69,7 @@ export function ProductsTable({
   onRefresh,
 }: ProductsTableProps) {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [archivingProduct, setArchivingProduct] = useState<string | null>(null);
 
   const toggleProduct = (productId: string) => {
     setSelectedProducts((prev) =>
@@ -81,6 +85,55 @@ export function ProductsTable({
         ? []
         : products.map((product) => product.id || "").filter((id) => id !== "")
     );
+  };
+
+  const handleViewDetails = (product: Product) => {
+    if (!product.slug) {
+      toast.error("Product slug not found");
+      return;
+    }
+
+    const marketplaceUrl = `https://marketplace.3dos.io/public/products/${product.slug}`;
+    window.open(marketplaceUrl, "_blank");
+  };
+
+  const handleToggleArchiveProduct = async (product: Product) => {
+    if (!product.id) {
+      toast.error("Product ID not found");
+      return;
+    }
+
+    const isArchiving = product.status; // If status is true, we're archiving; if false, we're unarchiving
+
+    try {
+      setArchivingProduct(product.id);
+      const response: ArchiveProductResponse =
+        await productsService.archiveProduct(product.id);
+      console.log(response);
+      if (response.status === "success") {
+        // Show the response message from the API
+        const actionText = isArchiving ? "archived" : "unarchived";
+        toast.success(
+          response.message || `Product ${actionText} successfully`,
+          {
+            description: response.data?.title
+              ? `"${response.data.title}" has been ${actionText}`
+              : undefined,
+            duration: 4000,
+          }
+        );
+        onRefresh(); // Refresh the products list
+      } else {
+        const actionText = isArchiving ? "archive" : "unarchive";
+        toast.error(response.message || `Failed to ${actionText} product`);
+      }
+    } catch (error) {
+      console.error("Error toggling archive status:", error);
+      const actionText = isArchiving ? "archive" : "unarchive";
+      toast.error(`Failed to ${actionText} product`);
+    } finally {
+      setArchivingProduct(null);
+    }
   };
 
   if (error) {
@@ -338,10 +391,7 @@ export function ProductsTable({
                     <div className="flex items-center gap-1">
                       {product.unitsSold || 0}
                       {product.isAiGenerated && (
-                        <Bot
-                          className="h-3 w-3 text-purple-500"
-                          title="AI Generated"
-                        />
+                        <Bot className="h-3 w-3 text-purple-500" />
                       )}
                     </div>
                   </TableCell>
@@ -358,7 +408,9 @@ export function ProductsTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleViewDetails(product)}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
@@ -370,9 +422,23 @@ export function ProductsTable({
                           <Package className="h-4 w-4 mr-2" />
                           Download Files
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Product
+                        <DropdownMenuItem
+                          className="text-orange-600"
+                          onClick={() => handleToggleArchiveProduct(product)}
+                          disabled={archivingProduct === product.id}
+                        >
+                          {product.status ? (
+                            <Archive className="h-4 w-4 mr-2" />
+                          ) : (
+                            <ArchiveX className="h-4 w-4 mr-2" />
+                          )}
+                          {archivingProduct === product.id
+                            ? product.status
+                              ? "Archiving..."
+                              : "Unarchiving..."
+                            : product.status
+                            ? "Archive Product"
+                            : "Unarchive Product"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
