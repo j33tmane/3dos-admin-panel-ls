@@ -7,6 +7,7 @@ import {
   Settings,
   ShoppingCart,
   Users,
+  Receipt,
 } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
@@ -43,6 +44,11 @@ export const NAVIGATION_ITEMS = [
         url: "/orders",
         icon: CreditCard,
       },
+      {
+        title: "Payments",
+        url: "/payments",
+        icon: Receipt,
+      },
     ],
   },
   {
@@ -70,6 +76,7 @@ export const PROTECTED_ROUTES = [
   "/users",
   "/products",
   "/orders",
+  "/payments",
   "/settings",
   "/organization",
   "/account",
