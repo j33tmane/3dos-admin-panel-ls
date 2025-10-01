@@ -10,6 +10,7 @@ export interface OrderUser {
   isEmailVerified: boolean;
   affiliateCode: string;
   createdAt: string;
+  avatar?: string;
 }
 
 export interface OrderModelImage {

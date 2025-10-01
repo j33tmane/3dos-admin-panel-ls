@@ -4,7 +4,6 @@ import { useState } from "react";
 import {
   MoreHorizontal,
   Eye,
-  Edit,
   Package,
   RefreshCw,
   AlertCircle,
@@ -14,6 +13,9 @@ import {
   User,
   Archive,
   ArchiveX,
+  Download,
+  Image,
+  File,
 } from "lucide-react";
 import {
   Table,
@@ -45,6 +47,7 @@ import { Product, ProductsParams, ArchiveProductResponse } from "@/types";
 import { formatCurrency, formatDate } from "@/utils";
 import { productsService } from "@/services";
 import { toast } from "sonner";
+import JSZip from "jszip";
 
 interface ProductsTableProps {
   products: Product[];
@@ -70,6 +73,9 @@ export function ProductsTable({
 }: ProductsTableProps) {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [archivingProduct, setArchivingProduct] = useState<string | null>(null);
+  const [downloadingProduct, setDownloadingProduct] = useState<string | null>(
+    null
+  );
 
   const toggleProduct = (productId: string) => {
     setSelectedProducts((prev) =>
@@ -95,6 +101,144 @@ export function ProductsTable({
 
     const marketplaceUrl = `https://marketplace.3dos.io/public/products/${product.slug}`;
     window.open(marketplaceUrl, "_blank");
+  };
+
+  const downloadFileAsBlob = async (url: string): Promise<Blob> => {
+    try {
+      const response = await fetch(url, {
+        mode: "cors",
+        credentials: "omit",
+      });
+      if (!response.ok)
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      return response.blob();
+    } catch (error) {
+      // If CORS fails, try with no-cors mode
+      if (error instanceof TypeError && error.message.includes("CORS")) {
+        console.warn(`CORS error for ${url}, trying alternative method`);
+        try {
+          const response = await fetch(url, { mode: "no-cors" });
+          return response.blob();
+        } catch (noCorsError) {
+          throw new Error(`CORS blocked: ${url}`);
+        }
+      }
+      throw error;
+    }
+  };
+
+  const downloadZipFile = (zipBlob: Blob, filename: string) => {
+    const downloadUrl = window.URL.createObjectURL(zipBlob);
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+  };
+
+  const handleDownloadFiles = async (product: Product) => {
+    if (!product.id) {
+      toast.error("Product ID not found");
+      return;
+    }
+
+    setDownloadingProduct(product.id);
+
+    try {
+      const zip = new JSZip();
+      const folderName = product.title
+        .replace(/[^a-zA-Z0-9\s]/g, "")
+        .replace(/\s+/g, "_");
+      const productFolder = zip.folder(folderName);
+
+      if (!productFolder) {
+        throw new Error("Failed to create folder in zip");
+      }
+
+      const downloadPromises: Promise<void>[] = [];
+      const failedDownloads: string[] = [];
+
+      // Download STL file if available
+      if (product.file?.url) {
+        const fileExtension = product.file.url.split(".").pop() || "stl";
+        const filename = `${product.title.replace(
+          /[^a-zA-Z0-9]/g,
+          "_"
+        )}.${fileExtension}`;
+
+        downloadPromises.push(
+          downloadFileAsBlob(product.file.url)
+            .then((blob) => {
+              productFolder.file(filename, blob);
+            })
+            .catch((error) => {
+              console.error(`Failed to download STL file: ${error.message}`);
+              failedDownloads.push(`STL file: ${error.message}`);
+            })
+        );
+      }
+
+      // Download images
+      if (product.images && product.images.length > 0) {
+        product.images.forEach((image, index) => {
+          if (image.url) {
+            const imageExtension = image.url.split(".").pop() || "jpg";
+            const filename = `${product.title.replace(
+              /[^a-zA-Z0-9]/g,
+              "_"
+            )}_image_${index + 1}.${imageExtension}`;
+
+            downloadPromises.push(
+              downloadFileAsBlob(image.url)
+                .then((blob) => {
+                  productFolder.file(filename, blob);
+                })
+                .catch((error) => {
+                  console.error(
+                    `Failed to download image ${index + 1}: ${error.message}`
+                  );
+                  failedDownloads.push(`Image ${index + 1}: ${error.message}`);
+                })
+            );
+          }
+        });
+      }
+
+      if (downloadPromises.length === 0) {
+        toast.error("No files available for download");
+        return;
+      }
+
+      // Wait for all downloads to complete (including failures)
+      await Promise.allSettled(downloadPromises);
+
+      // Generate and download the zip file
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipFilename = `${folderName}_files.zip`;
+      downloadZipFile(zipBlob, zipFilename);
+
+      const totalFiles = downloadPromises.length;
+      const successfulFiles = totalFiles - failedDownloads.length;
+      const fileType = product.file?.url ? "files and images" : "images";
+
+      if (failedDownloads.length === 0) {
+        toast.success(
+          `Successfully downloaded ${successfulFiles} ${fileType} for "${product.title}" in a zip file`
+        );
+      } else {
+        toast.success(
+          `Downloaded ${successfulFiles}/${totalFiles} ${fileType} for "${product.title}". ${failedDownloads.length} files failed due to CORS restrictions.`
+        );
+        console.warn("Failed downloads:", failedDownloads);
+      }
+    } catch (error) {
+      console.error("Error downloading files:", error);
+      toast.error("Failed to download files");
+    } finally {
+      setDownloadingProduct(null);
+    }
   };
 
   const handleToggleArchiveProduct = async (product: Product) => {
@@ -414,13 +558,18 @@ export function ProductsTable({
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit Product
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Package className="h-4 w-4 mr-2" />
-                          Download Files
+                        <DropdownMenuItem
+                          onClick={() => handleDownloadFiles(product)}
+                          disabled={downloadingProduct === product.id}
+                        >
+                          {downloadingProduct === product.id ? (
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Download className="h-4 w-4 mr-2" />
+                          )}
+                          {downloadingProduct === product.id
+                            ? "Downloading..."
+                            : "Download Files"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-orange-600"

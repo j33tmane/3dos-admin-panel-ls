@@ -17,9 +17,11 @@ class ApiService {
 
   private getAuthHeaders(): Record<string, string> {
     const token = this.getAccessToken();
+    const csrfToken = this.getCsrfToken();
     return {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
+      ...(csrfToken && { "X-CSRF-Token": csrfToken }),
     };
   }
 
@@ -30,7 +32,26 @@ class ApiService {
     return null;
   }
 
+  private getCsrfToken(): string | null {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("csrf_token");
+    }
+    return null;
+  }
+
+  private setCsrfToken(token: string): void {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("csrf_token", token);
+    }
+  }
+
   private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    // Extract CSRF token from response headers
+    const csrfToken = response.headers.get("X-CSRF-Token");
+    if (csrfToken) {
+      this.setCsrfToken(csrfToken);
+    }
+
     const data = await response.json();
 
     if (!response.ok) {

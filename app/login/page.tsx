@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { authService } from "@/services";
+import { authService, usersService } from "@/services";
 import { User, Tokens } from "@/types";
 import { formatOtpInput } from "@/utils";
 
@@ -37,23 +37,16 @@ export default function LoginPage() {
     setSuccessMessage(null);
 
     try {
-      const response = await fetch("/api/auth/send-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+      const response = await authService.sendOtp({ email });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (response.code == 200) {
         setSuccessMessage("OTP sent to your email address");
         setStep("otp");
       } else {
-        setErrorMessage(data.message || "Failed to send OTP");
+        setErrorMessage("Failed to send OTP");
       }
     } catch (error) {
+      console.error("Send OTP error:", error);
       setErrorMessage("Network error. Please try again.");
     } finally {
       setIsLoading(false);
@@ -66,17 +59,11 @@ export default function LoginPage() {
     setErrorMessage(null);
 
     try {
-      const response = await fetch("/api/auth/login-with-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, otp }),
-      });
+      const response = await authService.loginWithOtp({ email, otp });
 
-      const data = await response.json();
+      if (response.data) {
+        const data = response.data;
 
-      if (response.ok) {
         // Store tokens and user info in browser cache (localStorage)
         if (data.tokens && data.user) {
           authService.setTokens(data.tokens as Tokens);
@@ -91,14 +78,26 @@ export default function LoginPage() {
 
           // Debug: Verify stored data
           authService.debugStoredData();
+
+          // Fetch CSRF token for the logged-in user
+          try {
+            const userDetails = await usersService.getUserDetails(
+              data.user.uid
+            );
+            console.log("✅ CSRF token fetched for user:", data.user.uid);
+          } catch (csrfError) {
+            console.warn("⚠️ Failed to fetch CSRF token:", csrfError);
+            // Don't block login if CSRF token fetch fails
+          }
         }
 
         // Login successful, redirect to dashboard
         router.replace("/dashboard");
       } else {
-        setErrorMessage(data.message || "Invalid OTP");
+        setErrorMessage("Invalid OTP");
       }
     } catch (error) {
+      console.error("Login OTP error:", error);
       setErrorMessage("Network error. Please try again.");
     } finally {
       setIsLoading(false);

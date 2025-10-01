@@ -1,22 +1,29 @@
 // Authentication service
 import { apiService } from "./api";
+import { usersService } from "./users";
 import { SendOtpRequest, LoginRequest, AuthResponse } from "@/types";
+import { ApiResponse } from "@/types/api";
 
 class AuthService {
-  async sendOtp(data: SendOtpRequest): Promise<AuthResponse> {
+  async sendOtp(data: SendOtpRequest): Promise<ApiResponse<AuthResponse>> {
     return apiService.post<AuthResponse>("/auth/send-otp", data);
   }
 
-  async loginWithOtp(data: LoginRequest): Promise<AuthResponse> {
+  async loginWithOtp(data: LoginRequest): Promise<ApiResponse<AuthResponse>> {
     return apiService.post<AuthResponse>("/auth/login-with-otp", data);
   }
 
   async logout(): Promise<{ message: string }> {
-    return apiService.post<{ message: string }>("/auth/logout");
+    const response = await apiService.post<{ message: string }>("/auth/logout");
+    return response.data || { message: "Logged out" };
   }
 
   async getCurrentUser(): Promise<{ user: any; authenticated: boolean }> {
-    return apiService.get<{ user: any; authenticated: boolean }>("/auth/me");
+    const response = await apiService.get<{
+      user: any;
+      authenticated: boolean;
+    }>("/auth/me");
+    return response.data || { user: null, authenticated: false };
   }
 
   // Client-side authentication methods
@@ -83,11 +90,33 @@ class AuthService {
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("refresh_token_expires");
       localStorage.removeItem("user");
+      localStorage.removeItem("csrf_token");
     }
   }
 
   private isTokenExpired(tokenExpires: string): boolean {
     return new Date(tokenExpires) <= new Date();
+  }
+
+  // CSRF token management
+  async fetchCsrfToken(): Promise<void> {
+    if (!this.isAuthenticated()) {
+      console.warn("⚠️ Cannot fetch CSRF token: User not authenticated");
+      return;
+    }
+
+    const user = this.getUser();
+    if (!user?.uid) {
+      console.warn("⚠️ Cannot fetch CSRF token: User UID not found");
+      return;
+    }
+
+    try {
+      await usersService.getUserDetails(user.uid);
+      console.log("✅ CSRF token fetched for authenticated user:", user.uid);
+    } catch (error) {
+      console.warn("⚠️ Failed to fetch CSRF token:", error);
+    }
   }
 
   // Debug methods

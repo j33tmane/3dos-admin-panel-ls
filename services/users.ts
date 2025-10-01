@@ -45,28 +45,7 @@ class UsersService {
         totalResults: 0,
       },
       errors: response.errors,
-    };
-  }
-
-  /**
-   * Get a specific user by ID
-   */
-  async getUserById(userId: string): Promise<UsersResponse> {
-    const response: ApiResponse<UsersResponse> =
-      await apiService.get<UsersResponse>(`/users/admin/${userId}`);
-
-    return {
-      status: response.status,
-      message: response.message,
-      data: response.data || {
-        results: [],
-        page: 1,
-        limit: 1,
-        totalPages: 1,
-        totalResults: 1,
-      },
-      errors: response.errors,
-    };
+    } as UsersResponse;
   }
 
   /**
@@ -87,7 +66,7 @@ class UsersService {
         totalResults: 0,
       },
       errors: response.errors,
-    };
+    } as UsersResponse;
   }
 
   /**
@@ -96,6 +75,22 @@ class UsersService {
   async getUserDetails(uid: string): Promise<UserDetailsResponse> {
     const response: ApiResponse<UserDetailsResponse> =
       await apiService.get<UserDetailsResponse>(`/users/${uid}`);
+
+    return {
+      status: response.status,
+      code: response.code,
+      message: response.message,
+      data: response.data || ({} as any),
+      errors: response.errors || [],
+    };
+  }
+
+  /**
+   * Get user details by userId (new endpoint that returns CSRF token)
+   */
+  async getUserById(userId: string): Promise<UserDetailsResponse> {
+    const response: ApiResponse<UserDetailsResponse> =
+      await apiService.get<UserDetailsResponse>(`/users/${userId}`);
 
     return {
       status: response.status,
