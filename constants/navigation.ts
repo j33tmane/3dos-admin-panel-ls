@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   Users,
   Receipt,
+  Folder,
 } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
@@ -33,6 +34,11 @@ export const NAVIGATION_ITEMS = [
         title: "Users",
         url: "/users",
         icon: Users,
+      },
+      {
+        title: "Categories",
+        url: "/categories",
+        icon: Folder,
       },
       {
         title: "Products",
@@ -74,6 +80,7 @@ export const PROTECTED_ROUTES = [
   "/dashboard",
   "/analytics",
   "/users",
+  "/categories",
   "/products",
   "/orders",
   "/payments",
