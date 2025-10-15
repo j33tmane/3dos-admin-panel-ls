@@ -6,9 +6,8 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { CategoriesFilters } from "@/components/categories-filters";
 import { CategoriesTable } from "@/components/categories-table";
-import { CategoriesStats } from "@/components/categories-stats";
 import { categoriesService } from "@/services";
-import { Category, CategoriesParams, CategoryStats } from "@/types";
+import { Category, CategoriesParams } from "@/types";
 import { toast } from "sonner";
 
 export default function CategoriesPage() {
@@ -18,29 +17,27 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<CategoryStats | null>(null);
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 10,
     totalPages: 0,
     totalResults: 0,
   });
   const [filters, setFilters] = useState<CategoriesParams>({
     page: 1,
-    limit: 20,
+    limit: 10,
   });
 
   // Read filters from URL parameters
   const getFiltersFromURL = (): CategoriesParams => {
     const params: CategoriesParams = {
       page: 1,
-      limit: 20,
+      limit: 10,
     };
 
     const page = searchParams.get("page");
     const limit = searchParams.get("limit");
     const name = searchParams.get("name");
-    const slug = searchParams.get("slug");
     const parent = searchParams.get("parent");
     const isActive = searchParams.get("isActive");
     const level = searchParams.get("level");
@@ -49,10 +46,9 @@ export default function CategoriesPage() {
     if (page) params.page = parseInt(page, 10);
     if (limit) params.limit = parseInt(limit, 10);
     if (name) params.name = name;
-    if (slug) params.slug = slug;
-    if (parent) params.parent = parent;
-    if (isActive && isActive !== "all") params.isActive = isActive === "true";
-    if (level) params.level = parseInt(level, 10);
+    if (parent && parent !== "all") params.parent = parent;
+    if (isActive && isActive !== "all") params.isActive = isActive === "active";
+    if (level && level !== "all") params.level = parseInt(level, 10);
     params.sortBy = sortBy || "-createdAt"; // Always include sortBy with default
 
     return params;
@@ -66,13 +62,14 @@ export default function CategoriesPage() {
     // Add all non-default filter values to URL
     if (newFilters.page && newFilters.page !== 1)
       urlParams.set("page", newFilters.page.toString());
-    if (newFilters.limit && newFilters.limit !== 20)
+    if (newFilters.limit && newFilters.limit !== 10)
       urlParams.set("limit", newFilters.limit.toString());
     if (newFilters.name) urlParams.set("name", newFilters.name);
-    if (newFilters.slug) urlParams.set("slug", newFilters.slug);
     if (newFilters.parent) urlParams.set("parent", newFilters.parent);
-    if (newFilters.isActive !== undefined) urlParams.set("isActive", newFilters.isActive.toString());
-    if (newFilters.level) urlParams.set("level", newFilters.level.toString());
+    if (newFilters.isActive !== undefined)
+      urlParams.set("isActive", newFilters.isActive ? "active" : "inactive");
+    if (newFilters.level !== undefined)
+      urlParams.set("level", newFilters.level.toString());
     if (newFilters.sortBy) urlParams.set("sortBy", newFilters.sortBy);
 
     // Update URL without page reload
@@ -112,17 +109,6 @@ export default function CategoriesPage() {
     }
   };
 
-  const fetchStats = async () => {
-    try {
-      const response = await categoriesService.getCategoryStats();
-      if (response.data) {
-        setStats(response.data);
-      }
-    } catch (err) {
-      console.error("Error fetching category stats:", err);
-    }
-  };
-
   // Initialize filters from URL on component mount
   useEffect(() => {
     const urlFilters = getFiltersFromURL();
@@ -135,11 +121,6 @@ export default function CategoriesPage() {
       fetchCategories(filters);
     }
   }, [filters]);
-
-  // Fetch stats on component mount
-  useEffect(() => {
-    fetchStats();
-  }, []);
 
   const handleFiltersChange = (newFilters: CategoriesParams) => {
     const updatedFilters = { ...filters, ...newFilters, page: 1 };
@@ -157,7 +138,6 @@ export default function CategoriesPage() {
     <SidebarInset>
       <DashboardHeader />
       <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-        <CategoriesStats stats={stats} loading={loading} />
         <CategoriesFilters
           onFiltersChange={handleFiltersChange}
           loading={loading}

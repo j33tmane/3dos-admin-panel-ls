@@ -42,6 +42,7 @@ export default function ProductsPage() {
     const status = searchParams.get("status");
     const isPrivate = searchParams.get("isPrivate");
     const userId = searchParams.get("userId");
+    const categoryId = searchParams.get("category");
     const sortBy = searchParams.get("sortBy");
 
     if (page) params.page = parseInt(page, 10);
@@ -52,6 +53,7 @@ export default function ProductsPage() {
     if (isPrivate && isPrivate !== "all")
       params.isPrivate = isPrivate === "private";
     if (userId) params.userId = userId;
+    if (categoryId) params.categoryId = categoryId;
     params.sortBy = sortBy || "-createdAt"; // Always include sortBy with default
 
     return params;

@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { ProductsParams } from "@/types";
+import { ProductsParams, Category } from "@/types";
+import { categoriesService } from "@/services";
 
 interface ProductsFiltersProps {
   onFiltersChange: (filters: ProductsParams) => void;
@@ -33,8 +34,13 @@ export function ProductsFilters({
   const [status, setStatus] = useState("all");
   const [isPrivate, setIsPrivate] = useState("all");
   const [userId, setUserId] = useState("");
+  const [categoryId, setCategoryId] = useState("all");
   const [sortBy, setSortBy] = useState("-createdAt");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Categories state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -47,6 +53,7 @@ export function ProductsFilters({
       setStatus("all");
       setIsPrivate("all");
       setUserId("");
+      setCategoryId("all");
       setSortBy("-createdAt");
       setShowFilters(false);
 
@@ -69,6 +76,7 @@ export function ProductsFilters({
     const urlStatus = searchParams.get("status") || "all";
     const urlIsPrivate = searchParams.get("isPrivate") || "all";
     const urlUserId = searchParams.get("userId") || "";
+    const urlCategoryId = searchParams.get("category") || "all";
     const urlSortBy = searchParams.get("sortBy") || "-createdAt";
 
     setTitle(urlTitle);
@@ -76,6 +84,7 @@ export function ProductsFilters({
     setStatus(urlStatus);
     setIsPrivate(urlIsPrivate);
     setUserId(urlUserId);
+    setCategoryId(urlCategoryId);
     setSortBy(urlSortBy);
 
     // Show filters if any are active
@@ -85,6 +94,7 @@ export function ProductsFilters({
         urlStatus !== "all" ||
         urlIsPrivate !== "all" ||
         urlUserId ||
+        urlCategoryId !== "all" ||
         urlSortBy !== "-createdAt"
     );
     setShowFilters(hasActiveFilters);
@@ -100,6 +110,13 @@ export function ProductsFilters({
     activeFilters.push({ key: "isPrivate", label: `Private: ${isPrivate}` });
   if (userId)
     activeFilters.push({ key: "userId", label: `User ID: ${userId}` });
+  if (categoryId && categoryId !== "all") {
+    const category = categories.find((c) => c.id === categoryId);
+    activeFilters.push({
+      key: "categoryId",
+      label: `Category: ${category?.name || categoryId}`,
+    });
+  }
   if (sortBy !== "-createdAt")
     activeFilters.push({ key: "sort", label: `Sort: ${sortBy}` });
 
@@ -109,6 +126,7 @@ export function ProductsFilters({
     if (key === "status") setStatus("all");
     if (key === "isPrivate") setIsPrivate("all");
     if (key === "userId") setUserId("");
+    if (key === "categoryId") setCategoryId("all");
     if (key === "sort") setSortBy("-createdAt");
 
     // The URL will be updated automatically through the notifyFiltersChange effect
@@ -137,6 +155,8 @@ export function ProductsFilters({
     if (status !== "all") urlParams.set("status", status);
     if (isPrivate !== "all") urlParams.set("isPrivate", isPrivate);
     if (userId) urlParams.set("userId", userId);
+    if (categoryId && categoryId !== "all")
+      urlParams.set("category", categoryId);
     if (sortBy && sortBy !== "-createdAt") urlParams.set("sortBy", sortBy);
 
     // Update URL without page reload
@@ -159,6 +179,7 @@ export function ProductsFilters({
     if (status !== "all") filters.status = status === "active";
     if (isPrivate !== "all") filters.isPrivate = isPrivate === "private";
     if (userId) filters.userId = userId;
+    if (categoryId && categoryId !== "all") filters.categoryId = categoryId;
 
     onFiltersChange(filters);
     updateURL(); // Update URL whenever filters change
@@ -167,7 +188,28 @@ export function ProductsFilters({
   // Call whenever any state changes
   useEffect(() => {
     notifyFiltersChange();
-  }, [title, material, status, isPrivate, userId, sortBy]);
+  }, [title, material, status, isPrivate, userId, categoryId, sortBy]);
+
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      setLoadingCategories(true);
+      try {
+        const response = await categoriesService.getCategories({
+          limit: 100,
+          isActive: true,
+        });
+        if (response.status === "success") {
+          setCategories(response.data.results);
+        }
+      } catch (error) {
+        console.error("Error loading categories:", error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
 
   return (
     <Card>
@@ -242,6 +284,24 @@ export function ProductsFilters({
                 className="w-[140px]"
                 disabled={loading}
               />
+
+              <Select
+                value={categoryId}
+                onValueChange={setCategoryId}
+                disabled={loading || loadingCategories}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
               <Select
                 value={sortBy}

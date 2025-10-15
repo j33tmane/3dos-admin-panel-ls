@@ -46,6 +46,15 @@ export interface Product {
   activeOffer: any;
   id: string;
   file: ProductFile;
+  category?: {
+    name: string;
+    categoryPath: string[];
+    slug: string;
+    seoSlug: string;
+    fullPath: string;
+    urlPath: string;
+    id: string;
+  };
 }
 
 export interface ProductsResponse {
@@ -70,6 +79,7 @@ export interface ProductsParams {
   status?: boolean;
   isPrivate?: boolean;
   userId?: string;
+  categoryId?: string;
   sortBy?: string; // Format: "field:direction" (asc/desc)
 }
 

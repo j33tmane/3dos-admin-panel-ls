@@ -16,6 +16,9 @@ import {
   Download,
   Image,
   File,
+  Tag,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import {
   Table,
@@ -40,12 +43,39 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Product, ProductsParams, ArchiveProductResponse } from "@/types";
+import {
+  Product,
+  ProductsParams,
+  ArchiveProductResponse,
+  Category,
+} from "@/types";
 import { formatCurrency, formatDate } from "@/utils";
-import { productsService } from "@/services";
+import { productsService, categoriesService } from "@/services";
 import { toast } from "sonner";
 import JSZip from "jszip";
 
@@ -75,6 +105,31 @@ export function ProductsTable({
   const [archivingProduct, setArchivingProduct] = useState<string | null>(null);
   const [downloadingProduct, setDownloadingProduct] = useState<string | null>(
     null
+  );
+
+  // Assign category modal state
+  const [assignCategoryOpen, setAssignCategoryOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("none");
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [assigningCategory, setAssigningCategory] = useState(false);
+
+  // Searchable select state
+  const [categorySelectOpen, setCategorySelectOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Get selected category name
+  const getSelectedCategoryName = () => {
+    if (selectedCategoryId === "none") return "No Category";
+    if (!selectedCategoryId) return "Select a category";
+    const category = categories.find((c) => c.id === selectedCategoryId);
+    return category ? category.name : "Select a category";
+  };
+
+  // Filter categories based on search term
+  const filteredCategories = categories.filter((category) =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const toggleProduct = (productId: string) => {
@@ -280,6 +335,69 @@ export function ProductsTable({
     }
   };
 
+  // Assign category functions
+  const handleAssignCategory = async (product: Product) => {
+    setSelectedProduct(product);
+    setAssignCategoryOpen(true);
+    setLoadingCategories(true);
+    setSearchTerm("");
+    setCategorySelectOpen(false);
+
+    try {
+      // Fetch all categories
+      const response = await categoriesService.getCategories({
+        limit: 100, // Get all categories
+        isActive: true, // Only active categories
+      });
+
+      if (response.status === "success") {
+        setCategories(response.data.results);
+        // Pre-select current category if product has one
+        setSelectedCategoryId("none");
+      } else {
+        toast.error("Failed to load categories");
+      }
+    } catch (error) {
+      console.error("Error loading categories:", error);
+      toast.error("Failed to load categories");
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const handleConfirmAssignCategory = async () => {
+    if (!selectedProduct) {
+      toast.error("No product selected");
+      return;
+    }
+
+    if (!selectedCategoryId || selectedCategoryId === "none") {
+      toast.error("Please select a category");
+      return;
+    }
+
+    try {
+      setAssigningCategory(true);
+      const response = await categoriesService.assignProductToCategory(
+        selectedCategoryId,
+        { productId: selectedProduct.id }
+      );
+
+      if (response.status === "success") {
+        toast.success("Category assigned successfully");
+        setAssignCategoryOpen(false);
+        onRefresh();
+      } else {
+        toast.error(response.message || "Failed to assign category");
+      }
+    } catch (error) {
+      console.error("Error assigning category:", error);
+      toast.error("Failed to assign category");
+    } finally {
+      setAssigningCategory(false);
+    }
+  };
+
   if (error) {
     return (
       <Card>
@@ -356,6 +474,7 @@ export function ProductsTable({
               <TableHead>Creator</TableHead>
               <TableHead>Price</TableHead>
               <TableHead>Material</TableHead>
+              <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Visibility</TableHead>
               <TableHead>Units Sold</TableHead>
@@ -388,6 +507,9 @@ export function ProductsTable({
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-16" />
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-6 w-16" />
@@ -495,6 +617,17 @@ export function ProductsTable({
                   </TableCell>
                   <TableCell>{product.material || "N/A"}</TableCell>
                   <TableCell>
+                    {product.category ? (
+                      <Badge variant="outline" className="text-xs">
+                        {product.category.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        No Category
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     <Badge
                       variant="secondary"
                       className={
@@ -572,6 +705,12 @@ export function ProductsTable({
                             : "Download Files"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
+                          onClick={() => handleAssignCategory(product)}
+                        >
+                          <Tag className="h-4 w-4 mr-2" />
+                          Assign Category
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
                           className="text-orange-600"
                           onClick={() => handleToggleArchiveProduct(product)}
                           disabled={archivingProduct === product.id}
@@ -630,6 +769,133 @@ export function ProductsTable({
           </div>
         )}
       </CardContent>
+
+      {/* Assign Category Modal */}
+      <Dialog open={assignCategoryOpen} onOpenChange={setAssignCategoryOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Assign Category</DialogTitle>
+            <DialogDescription>
+              Select a category for "{selectedProduct?.title}"
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="category-select">Category</Label>
+              <Popover
+                open={categorySelectOpen}
+                onOpenChange={setCategorySelectOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={categorySelectOpen}
+                    className="w-full justify-between"
+                    disabled={loadingCategories}
+                  >
+                    {loadingCategories
+                      ? "Loading categories..."
+                      : getSelectedCategoryName()}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0" align="start">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search categories..."
+                      value={searchTerm}
+                      onValueChange={setSearchTerm}
+                    />
+                    <CommandList>
+                      <CommandEmpty>No categories found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="none"
+                          onSelect={(currentValue) => {
+                            console.log(
+                              "No Category onSelect called with:",
+                              currentValue
+                            );
+                            setSelectedCategoryId(currentValue);
+                            setCategorySelectOpen(false);
+                            setSearchTerm("");
+                          }}
+                        >
+                          <Check
+                            className={`mr-2 h-4 w-4 ${
+                              selectedCategoryId === "none"
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          />
+                          No Category
+                        </CommandItem>
+                        {filteredCategories.map((category, index) => (
+                          <CommandItem
+                            key={category.id || `category-${index}`}
+                            value={category.name}
+                            onSelect={() => {
+                              setSelectedCategoryId(category.id);
+                              setCategorySelectOpen(false);
+                              setSearchTerm("");
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${(() => {
+                                const categoryId = category.id;
+                                const isSelected =
+                                  selectedCategoryId === categoryId;
+                                return isSelected ? "opacity-100" : "opacity-0";
+                              })()}`}
+                            />
+                            <div className="flex items-center space-x-2">
+                              <span>{category.name}</span>
+                              {category.parent && (
+                                <Badge variant="outline" className="text-xs">
+                                  Subcategory
+                                </Badge>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setAssignCategoryOpen(false)}
+              disabled={assigningCategory}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmAssignCategory}
+              disabled={
+                assigningCategory ||
+                !selectedCategoryId ||
+                selectedCategoryId === "none"
+              }
+            >
+              {assigningCategory ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                "Assign Category"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

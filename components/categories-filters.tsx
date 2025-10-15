@@ -29,10 +29,9 @@ export function CategoriesFilters({
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [parent, setParent] = useState("");
-  const [isActive, setIsActive] = useState("all");
-  const [level, setLevel] = useState("");
+  const [parentFilter, setParentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [levelFilter, setLevelFilter] = useState("all");
   const [sortBy, setSortBy] = useState("-createdAt");
   const [showFilters, setShowFilters] = useState(false);
 
@@ -43,10 +42,9 @@ export function CategoriesFilters({
     if (clearAll === "true") {
       // Reset all filters to default values
       setName("");
-      setSlug("");
-      setParent("");
-      setIsActive("all");
-      setLevel("");
+      setParentFilter("all");
+      setStatusFilter("all");
+      setLevelFilter("all");
       setSortBy("-createdAt");
       setShowFilters(false);
 
@@ -62,33 +60,30 @@ export function CategoriesFilters({
       // Notify parent with reset filters
       const resetFilters: CategoriesParams = {
         page: 1,
-        limit: 20,
+        limit: 10,
       };
       onFiltersChange(resetFilters);
       return;
     }
 
     const urlName = searchParams.get("name") || "";
-    const urlSlug = searchParams.get("slug") || "";
-    const urlParent = searchParams.get("parent") || "";
-    const urlIsActive = searchParams.get("isActive") || "all";
-    const urlLevel = searchParams.get("level") || "";
+    const urlParent = searchParams.get("parent") || "all";
+    const urlStatus = searchParams.get("isActive") || "all";
+    const urlLevel = searchParams.get("level") || "all";
     const urlSortBy = searchParams.get("sortBy") || "-createdAt";
 
     setName(urlName);
-    setSlug(urlSlug);
-    setParent(urlParent);
-    setIsActive(urlIsActive);
-    setLevel(urlLevel);
+    setParentFilter(urlParent);
+    setStatusFilter(urlStatus);
+    setLevelFilter(urlLevel);
     setSortBy(urlSortBy);
 
     // Show filters if any are active
     const hasActiveFilters = Boolean(
       urlName ||
-        urlSlug ||
-        urlParent ||
-        urlIsActive !== "all" ||
-        urlLevel ||
+        urlParent !== "all" ||
+        urlStatus !== "all" ||
+        urlLevel !== "all" ||
         urlSortBy !== "-createdAt"
     );
     setShowFilters(hasActiveFilters);
@@ -96,20 +91,20 @@ export function CategoriesFilters({
 
   const activeFilters = [];
   if (name) activeFilters.push({ key: "name", label: `Name: ${name}` });
-  if (slug) activeFilters.push({ key: "slug", label: `Slug: ${slug}` });
-  if (parent) activeFilters.push({ key: "parent", label: `Parent: ${parent}` });
-  if (isActive !== "all")
-    activeFilters.push({ key: "isActive", label: `Status: ${isActive}` });
-  if (level) activeFilters.push({ key: "level", label: `Level: ${level}` });
+  if (parentFilter !== "all")
+    activeFilters.push({ key: "parent", label: `Parent: ${parentFilter}` });
+  if (statusFilter !== "all")
+    activeFilters.push({ key: "status", label: `Status: ${statusFilter}` });
+  if (levelFilter !== "all")
+    activeFilters.push({ key: "level", label: `Level: ${levelFilter}` });
   if (sortBy !== "-createdAt")
     activeFilters.push({ key: "sort", label: `Sort: ${sortBy}` });
 
   const clearFilter = (key: string) => {
     if (key === "name") setName("");
-    if (key === "slug") setSlug("");
-    if (key === "parent") setParent("");
-    if (key === "isActive") setIsActive("all");
-    if (key === "level") setLevel("");
+    if (key === "parent") setParentFilter("all");
+    if (key === "status") setStatusFilter("all");
+    if (key === "level") setLevelFilter("all");
     if (key === "sort") setSortBy("-createdAt");
 
     // The URL will be updated automatically through the notifyFiltersChange effect
@@ -134,10 +129,9 @@ export function CategoriesFilters({
 
     // Add all non-default filter values to URL
     if (name) urlParams.set("name", name);
-    if (slug) urlParams.set("slug", slug);
-    if (parent) urlParams.set("parent", parent);
-    if (isActive !== "all") urlParams.set("isActive", isActive);
-    if (level) urlParams.set("level", level);
+    if (parentFilter !== "all") urlParams.set("parent", parentFilter);
+    if (statusFilter !== "all") urlParams.set("isActive", statusFilter);
+    if (levelFilter !== "all") urlParams.set("level", levelFilter);
     if (sortBy && sortBy !== "-createdAt") urlParams.set("sortBy", sortBy);
 
     // Update URL without page reload
@@ -151,15 +145,14 @@ export function CategoriesFilters({
   const notifyFiltersChange = () => {
     const filters: CategoriesParams = {
       page: 1,
-      limit: 20,
+      limit: 10,
       sortBy: sortBy, // Always include sortBy
     };
 
     if (name) filters.name = name;
-    if (slug) filters.slug = slug;
-    if (parent) filters.parent = parent;
-    if (isActive !== "all") filters.isActive = isActive === "true";
-    if (level) filters.level = parseInt(level, 10);
+    if (parentFilter !== "all") filters.parent = parentFilter;
+    if (statusFilter !== "all") filters.isActive = statusFilter === "active";
+    if (levelFilter !== "all") filters.level = parseInt(levelFilter, 10);
 
     onFiltersChange(filters);
     updateURL(); // Update URL whenever filters change
@@ -168,7 +161,7 @@ export function CategoriesFilters({
   // Call whenever any state changes
   useEffect(() => {
     notifyFiltersChange();
-  }, [name, slug, parent, isActive, level, sortBy]);
+  }, [name, parentFilter, statusFilter, levelFilter, sortBy]);
 
   return (
     <Card>
@@ -178,7 +171,7 @@ export function CategoriesFilters({
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search by name..."
+                placeholder="Search by category name..."
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="pl-8"
@@ -199,38 +192,43 @@ export function CategoriesFilters({
           {showFilters && (
             <div className="flex flex-wrap gap-2">
               <Input
-                placeholder="Slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
-                className="w-[140px]"
+                placeholder="Parent Category ID"
+                value={parentFilter === "all" ? "" : parentFilter}
+                onChange={(e) => setParentFilter(e.target.value || "all")}
+                className="w-[160px]"
                 disabled={loading}
               />
 
-              <Input
-                placeholder="Parent ID"
-                value={parent}
-                onChange={(e) => setParent(e.target.value)}
-                className="w-[140px]"
+              <Select
+                value={statusFilter}
+                onValueChange={setStatusFilter}
                 disabled={loading}
-              />
-
-              <Input
-                placeholder="Level"
-                type="number"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-                className="w-[100px]"
-                disabled={loading}
-              />
-
-              <Select value={isActive} onValueChange={setIsActive} disabled={loading}>
+              >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={levelFilter}
+                onValueChange={setLevelFilter}
+                disabled={loading}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  <SelectItem value="0">Root (0)</SelectItem>
+                  <SelectItem value="1">Level 1</SelectItem>
+                  <SelectItem value="2">Level 2</SelectItem>
+                  <SelectItem value="3">Level 3</SelectItem>
+                  <SelectItem value="4">Level 4</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -247,10 +245,9 @@ export function CategoriesFilters({
                   <SelectItem value="createdAt">Oldest First</SelectItem>
                   <SelectItem value="name">Name A-Z</SelectItem>
                   <SelectItem value="-name">Name Z-A</SelectItem>
-                  <SelectItem value="productCount">Most Products</SelectItem>
-                  <SelectItem value="-productCount">Least Products</SelectItem>
-                  <SelectItem value="level">Level Asc</SelectItem>
-                  <SelectItem value="-level">Level Desc</SelectItem>
+                  <SelectItem value="sortOrder">Sort Order</SelectItem>
+                  <SelectItem value="-productCount">Most Products</SelectItem>
+                  <SelectItem value="productCount">Least Products</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -266,10 +263,16 @@ export function CategoriesFilters({
                   {filter.label}
                   <button
                     type="button"
-                    className="h-3 w-3 cursor-pointer p-0 m-0 bg-transparent border-none outline-none flex items-center justify-center"
-                    aria-label={`Clear filter ${filter.label}`}
+                    className="ml-1 p-0.5 rounded hover:bg-muted transition-colors"
+                    aria-label={`Remove filter ${filter.label}`}
                     onClick={() => clearFilter(filter.key)}
                     disabled={loading}
+                    style={{
+                      lineHeight: 0,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
                     <X className="h-3 w-3" />
                   </button>

@@ -8,7 +8,7 @@ import {
   ShoppingCart,
   Users,
   Receipt,
-  Folder,
+  FolderTree,
 } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
@@ -36,14 +36,14 @@ export const NAVIGATION_ITEMS = [
         icon: Users,
       },
       {
-        title: "Categories",
-        url: "/categories",
-        icon: Folder,
-      },
-      {
         title: "Products",
         url: "/products",
         icon: ShoppingCart,
+      },
+      {
+        title: "Categories",
+        url: "/categories",
+        icon: FolderTree,
       },
       {
         title: "Orders",
@@ -80,8 +80,8 @@ export const PROTECTED_ROUTES = [
   "/dashboard",
   "/analytics",
   "/users",
-  "/categories",
   "/products",
+  "/categories",
   "/orders",
   "/payments",
   "/settings",

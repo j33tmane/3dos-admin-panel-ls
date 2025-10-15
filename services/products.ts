@@ -26,6 +26,7 @@ class ProductsService {
     if (params.isPrivate !== undefined)
       queryParams.append("isPrivate", params.isPrivate.toString());
     if (params.userId) queryParams.append("userId", params.userId);
+    if (params.categoryId) queryParams.append("category", params.categoryId);
     if (params.sortBy) queryParams.append("sortBy", params.sortBy);
 
     const queryString = queryParams.toString();
