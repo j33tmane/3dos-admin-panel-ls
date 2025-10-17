@@ -19,6 +19,8 @@ import {
   Tag,
   Check,
   ChevronsUpDown,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import {
   Table,
@@ -104,6 +106,9 @@ export function ProductsTable({
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [archivingProduct, setArchivingProduct] = useState<string | null>(null);
   const [downloadingProduct, setDownloadingProduct] = useState<string | null>(
+    null
+  );
+  const [sponsoringProduct, setSponsoringProduct] = useState<string | null>(
     null
   );
 
@@ -332,6 +337,44 @@ export function ProductsTable({
       toast.error(`Failed to ${actionText} product`);
     } finally {
       setArchivingProduct(null);
+    }
+  };
+
+  const handleToggleSponsoredStatus = async (product: Product) => {
+    if (!product.id) {
+      toast.error("Product ID not found");
+      return;
+    }
+
+    const newSponsoredStatus = !product.isSponsored; // Toggle the current status
+    const actionText = newSponsoredStatus ? "trending" : "regular";
+
+    try {
+      setSponsoringProduct(product.id);
+      const response = await productsService.updateSponsoredStatus(
+        product.id,
+        newSponsoredStatus
+      );
+      
+      if (response.status === "success") {
+        toast.success(
+          response.message || `Product marked as ${actionText} successfully`,
+          {
+            description: product.title
+              ? `"${product.title}" is now ${actionText}`
+              : undefined,
+            duration: 4000,
+          }
+        );
+        onRefresh(); // Refresh the products list
+      } else {
+        toast.error(response.message || `Failed to update product status`);
+      }
+    } catch (error) {
+      console.error("Error toggling sponsored status:", error);
+      toast.error(`Failed to mark product as ${actionText}`);
+    } finally {
+      setSponsoringProduct(null);
     }
   };
 
@@ -628,16 +671,27 @@ export function ProductsTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        product.status
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : "bg-red-100 text-red-800 hover:bg-red-200"
-                      }
-                    >
-                      {product.status ? "Active" : "Inactive"}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge
+                        variant="secondary"
+                        className={
+                          product.status
+                            ? "bg-green-100 text-green-800 hover:bg-green-200"
+                            : "bg-red-100 text-red-800 hover:bg-red-200"
+                        }
+                      >
+                        {product.status ? "Active" : "Inactive"}
+                      </Badge>
+                      {product.isSponsored && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-100 text-blue-800 hover:bg-blue-200"
+                        >
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          Trending
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -709,6 +763,24 @@ export function ProductsTable({
                         >
                           <Tag className="h-4 w-4 mr-2" />
                           Assign Category
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className={product.isSponsored ? "text-blue-600" : "text-green-600"}
+                          onClick={() => handleToggleSponsoredStatus(product)}
+                          disabled={sponsoringProduct === product.id}
+                        >
+                          {product.isSponsored ? (
+                            <TrendingDown className="h-4 w-4 mr-2" />
+                          ) : (
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                          )}
+                          {sponsoringProduct === product.id
+                            ? product.isSponsored
+                              ? "Removing from Trending..."
+                              : "Making Trending..."
+                            : product.isSponsored
+                            ? "Remove from Trending"
+                            : "Make Trending"}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-orange-600"
