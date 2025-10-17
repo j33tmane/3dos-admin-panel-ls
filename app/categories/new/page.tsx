@@ -37,6 +37,7 @@ export default function NewCategoryPage() {
     sortOrder: 0,
     seoTitle: "",
     seoDescription: "",
+    seoSlug: "",
   });
 
   // Load parent category data if parentId is provided
@@ -58,14 +59,34 @@ export default function NewCategoryPage() {
     loadParentCategory();
   }, [parentId]);
 
+  // Function to generate SEO slug from title
+  const generateSlug = (title: string): string => {
+    return title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
+      .replace(/^-|-$/g, ""); // Remove leading/trailing hyphens
+  };
+
   const handleInputChange = (
     field: keyof CreateCategoryRequest,
     value: any
   ) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [field]: value,
+      };
+
+      // Auto-generate SEO slug when name changes
+      if (field === "name" && value) {
+        newData.seoSlug = generateSlug(value);
+      }
+
+      return newData;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -115,6 +136,7 @@ export default function NewCategoryPage() {
           sortOrder: 0,
           seoTitle: "",
           seoDescription: "",
+          seoSlug: "",
         });
       } else {
         toast.error(response.message || "Failed to create category");
@@ -287,6 +309,22 @@ export default function NewCategoryPage() {
                   />
                   <p className="text-xs text-muted-foreground">
                     {formData.seoDescription?.length || 0}/160 characters
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="seoSlug">SEO Slug</Label>
+                  <Input
+                    id="seoSlug"
+                    value={formData.seoSlug || ""}
+                    onChange={(e) =>
+                      handleInputChange("seoSlug", e.target.value)
+                    }
+                    placeholder="seo-friendly-url-slug"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Auto-generated from category name. Used in URLs and for SEO.
                   </p>
                 </div>
               </CardContent>

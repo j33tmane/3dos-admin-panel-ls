@@ -60,6 +60,7 @@ export interface CreateCategoryRequest {
   };
   seoTitle?: string;
   seoDescription?: string;
+  seoSlug?: string;
 }
 
 export interface UpdateCategoryRequest {
