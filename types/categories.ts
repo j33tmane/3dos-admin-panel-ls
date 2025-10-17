@@ -1,8 +1,8 @@
 // Category-related types for the admin panel
 
 export interface Category {
-  _id?: string;
-  id: string;
+  _id?: string; // MongoDB ObjectId (preferred)
+  id?: string; // Alternative ID field
   name: string;
   slug: string;
   description?: string;

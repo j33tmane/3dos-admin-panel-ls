@@ -51,7 +51,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Category, CategoriesParams } from "@/types";
-import { formatDate } from "@/utils";
+import { formatDate, getCategoryId, isValidCategoryId } from "@/utils";
 import { toast } from "sonner";
 import { categoriesService } from "@/services";
 
@@ -140,11 +140,19 @@ export function CategoriesTable({
     setSelectedCategories((prev) =>
       prev.length === categories.length
         ? []
-        : categories.map((category) => category._id).filter((id) => id !== "")
+        : categories
+            .map((category) => getCategoryId(category))
+            .filter((id) => id !== "")
     );
   };
 
   const handleViewDetails = (categoryId: string) => {
+    // Validate categoryId before navigation
+    if (!isValidCategoryId(categoryId)) {
+      console.error("Invalid category ID:", categoryId);
+      toast.error("Invalid category ID");
+      return;
+    }
     router.push(`/categories/${categoryId}`);
   };
 
@@ -158,7 +166,7 @@ export function CategoriesTable({
     );
 
     // Validate categoryId before navigation
-    if (!categoryId || categoryId === "undefined" || categoryId.length !== 24) {
+    if (!isValidCategoryId(categoryId)) {
       console.error("Invalid category ID:", categoryId);
       toast.error("Invalid category ID");
       return;
@@ -167,9 +175,11 @@ export function CategoriesTable({
   };
 
   const handleDeleteCategory = (category: Category) => {
+    // Get the correct ID field using utility function
+    const categoryId = getCategoryId(category);
+
     // Validate categoryId before showing modal
-    const categoryId = category._id;
-    if (!categoryId || categoryId === "undefined" || categoryId.length !== 24) {
+    if (!isValidCategoryId(categoryId)) {
       console.error("Invalid category ID:", categoryId);
       toast.error("Invalid category ID");
       return;
@@ -182,7 +192,7 @@ export function CategoriesTable({
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
 
-    const categoryId = categoryToDelete._id;
+    const categoryId = getCategoryId(categoryToDelete);
 
     try {
       const response = await categoriesService.deleteCategory(categoryId);
@@ -205,17 +215,12 @@ export function CategoriesTable({
 
   const handleAddSubcategory = (categoryId: string) => {
     // Validate categoryId before navigation
-    if (!categoryId || categoryId === "undefined" || categoryId.length !== 24) {
+    if (!isValidCategoryId(categoryId)) {
       console.error("Invalid parent category ID:", categoryId);
       toast.error("Invalid parent category ID");
       return;
     }
     router.push(`/categories/new?parent=${categoryId}`);
-  };
-
-  const handleUpdateProductCount = (categoryId: string) => {
-    // TODO: Implement update product count functionality
-    console.log("Update product count for category:", categoryId);
   };
 
   if (error) {
@@ -361,27 +366,34 @@ export function CategoriesTable({
               </TableRow>
             ) : (
               categories.map((category, index) => {
+                // Get the correct ID field using utility function
+                const categoryId = getCategoryId(category);
+
                 // Debug: Log category object to see its structure
                 console.log(
                   "Rendering category:",
                   category,
                   "ID:",
-                  category._id
+                  categoryId,
+                  "_id:",
+                  category._id,
+                  "id:",
+                  category.id
                 );
                 const FolderIcon = category.level === 0 ? Folder : FolderOpen;
                 return (
                   <TableRow
-                    key={category._id || `category-${index}`}
+                    key={categoryId || `category-${index}`}
                     className={
-                      selectedCategories.includes(category._id)
+                      selectedCategories.includes(categoryId)
                         ? "bg-muted/50"
                         : ""
                     }
                   >
                     <TableCell>
                       <Checkbox
-                        checked={selectedCategories.includes(category._id)}
-                        onCheckedChange={() => toggleCategory(category._id)}
+                        checked={selectedCategories.includes(categoryId)}
+                        onCheckedChange={() => toggleCategory(categoryId)}
                       />
                     </TableCell>
                     <TableCell>
@@ -478,30 +490,22 @@ export function CategoriesTable({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => handleViewDetails(category._id)}
+                            onClick={() => handleViewDetails(categoryId)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleEditCategory(category._id)}
+                            onClick={() => handleEditCategory(categoryId)}
                           >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Category
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleAddSubcategory(category._id)}
+                            onClick={() => handleAddSubcategory(categoryId)}
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Add Subcategory
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleUpdateProductCount(category._id)
-                            }
-                          >
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                            Update Product Count
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"

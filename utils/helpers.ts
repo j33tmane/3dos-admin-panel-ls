@@ -129,3 +129,21 @@ export const pick = <T extends Record<string, any>, K extends keyof T>(
   });
   return result;
 };
+
+/**
+ * Get the category ID from a category object
+ * Handles both _id (MongoDB ObjectId) and id fields
+ */
+export const getCategoryId = (category: {
+  _id?: string;
+  id?: string;
+}): string => {
+  return category._id || category.id || "";
+};
+
+/**
+ * Validate if a category ID is valid (24 characters for MongoDB ObjectId)
+ */
+export const isValidCategoryId = (id: string): boolean => {
+  return Boolean(id && id !== "undefined" && id.length === 24);
+};

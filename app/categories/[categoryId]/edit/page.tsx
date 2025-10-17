@@ -8,13 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
@@ -29,10 +22,10 @@ export default function EditCategoryPage() {
 
   const [loading, setLoading] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
+  const [parentCategory, setParentCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<UpdateCategoryRequest>({
     name: "",
     description: "",
-    parent: undefined,
     isActive: true,
     sortOrder: 0,
     seoTitle: "",
@@ -63,12 +56,39 @@ export default function EditCategoryPage() {
           setFormData({
             name: categoryData.name || "",
             description: categoryData.description || "",
-            parent: categoryData.parent || undefined,
             isActive: categoryData.isActive ?? true,
             sortOrder: categoryData.sortOrder || 0,
             seoTitle: categoryData.seoTitle || "",
             seoDescription: categoryData.seoDescription || "",
           });
+
+          // Fetch parent category if it exists
+          if (categoryData.parent) {
+            // Extract parent ID - handle both string and object cases
+            const parentId =
+              typeof categoryData.parent === "string"
+                ? categoryData.parent
+                : categoryData.parent._id || categoryData.parent.id;
+
+            if (parentId) {
+              try {
+                const parentResponse = await categoriesService.getCategoryById(
+                  parentId
+                );
+                if (parentResponse.status === "success") {
+                  setParentCategory(parentResponse.data);
+                } else {
+                  console.error(
+                    "Failed to fetch parent category:",
+                    parentResponse.message
+                  );
+                }
+              } catch (error) {
+                console.error("Error fetching parent category:", error);
+                // Don't show error for parent category fetch failure
+              }
+            }
+          }
         } else {
           toast.error(response.message || "Failed to load category");
           router.push("/categories");
@@ -257,25 +277,65 @@ export default function EditCategoryPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="parent">Parent Category</Label>
-                  <Select
-                    value={formData.parent || "none"}
-                    onValueChange={(value) =>
-                      handleInputChange(
-                        "parent",
-                        value === "none" ? undefined : value
-                      )
-                    }
-                    disabled={loading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select parent category (optional)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">None (Root Category)</SelectItem>
-                      {/* TODO: Load parent categories from API */}
-                    </SelectContent>
-                  </Select>
+                  <Label>Parent Category</Label>
+                  <div className="p-3 bg-muted rounded-md">
+                    {parentCategory ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          {parentCategory.name}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() =>
+                            router.push(
+                              `/categories/${
+                                parentCategory._id || parentCategory.id
+                              }`
+                            )
+                          }
+                          className="p-0 h-auto text-xs"
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    ) : category?.parent ? (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          Parent ID:{" "}
+                          {typeof category.parent === "string"
+                            ? category.parent.slice(0, 8) + "..."
+                            : (
+                                category.parent._id || category.parent.id
+                              )?.slice(0, 8) + "..."}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() => {
+                            const parentId =
+                              typeof category.parent === "string"
+                                ? category.parent
+                                : category.parent._id || category.parent.id;
+                            router.push(`/categories/${parentId}`);
+                          }}
+                          className="p-0 h-auto text-xs"
+                        >
+                          View Details
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        Root Category
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Parent category cannot be changed here. Use the category
+                    hierarchy to move categories.
+                  </p>
                 </div>
 
                 <div className="flex items-center space-x-2">
