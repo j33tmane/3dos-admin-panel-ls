@@ -103,6 +103,18 @@ class ProductsService {
   async getProductsStats(): Promise<ProductsResponse> {
     return apiService.get<ProductsResponse>("/models/admin/stats");
   }
+
+  /**
+   * Update product sponsored status (make trending)
+   */
+  async updateSponsoredStatus(
+    productId: string,
+    isSponsored: boolean
+  ): Promise<ApiResponse<any>> {
+    return apiService.patch<any>(`/models/${productId}/sponsored`, {
+      isSponsored,
+    });
+  }
 }
 
 export const productsService = new ProductsService();
