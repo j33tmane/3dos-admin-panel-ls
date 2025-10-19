@@ -79,6 +79,11 @@ class ApiService {
       ...headers,
     };
 
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    if (body instanceof FormData) {
+      delete requestHeaders["Content-Type"];
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
 
@@ -86,7 +91,11 @@ class ApiService {
       const response = await fetch(url, {
         method,
         headers: requestHeaders,
-        body: body ? JSON.stringify(body) : undefined,
+        body: body
+          ? body instanceof FormData
+            ? body
+            : JSON.stringify(body)
+          : undefined,
         signal: controller.signal,
       });
 

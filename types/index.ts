@@ -7,3 +7,4 @@ export * from "./users";
 export * from "./payments";
 export * from "./analytics";
 export * from "./categories";
+export * from "./ui-components";

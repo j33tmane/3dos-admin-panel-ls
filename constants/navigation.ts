@@ -9,6 +9,7 @@ import {
   Users,
   Receipt,
   FolderTree,
+  Layout,
 } from "lucide-react";
 
 export const NAVIGATION_ITEMS = [
@@ -55,6 +56,11 @@ export const NAVIGATION_ITEMS = [
         url: "/payments",
         icon: Receipt,
       },
+      {
+        title: "UI Components",
+        url: "/ui-components",
+        icon: Layout,
+      },
     ],
   },
   {
@@ -84,6 +90,7 @@ export const PROTECTED_ROUTES = [
   "/categories",
   "/orders",
   "/payments",
+  "/ui-components",
   "/settings",
   "/organization",
   "/account",
