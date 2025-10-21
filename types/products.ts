@@ -41,6 +41,7 @@ export interface Product {
   unitsSold: number;
   isPrivate: boolean;
   isAiGenerated: boolean;
+  isSponsored?: boolean;
   createdAt: string;
   slug: string;
   activeOffer: any;
