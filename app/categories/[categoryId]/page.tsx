@@ -451,6 +451,106 @@ export default function CategoryDetailsPage() {
           </Card>
         )}
 
+        {/* Keywords Information */}
+        {((category.coreKeywords && category.coreKeywords.length > 0) ||
+          (category.semanticKeywords1 &&
+            category.semanticKeywords1.length > 0) ||
+          (category.semanticKeywords2 &&
+            category.semanticKeywords2.length > 0)) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Keywords</CardTitle>
+              <CardDescription>
+                SEO keywords and semantic terms for this category
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {category.coreKeywords && category.coreKeywords.length > 0 && (
+                <div className="space-y-2">
+                  <span className="text-sm font-medium">Core Keywords:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {category.coreKeywords.map((keyword, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs"
+                      >
+                        {keyword}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {category.semanticKeywords1 &&
+                category.semanticKeywords1.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">
+                      Semantic Keywords 1:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {category.semanticKeywords1.map((keyword, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {keyword}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {category.semanticKeywords2 &&
+                category.semanticKeywords2.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-sm font-medium">
+                      Semantic Keywords 2:
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {category.semanticKeywords2.map((keyword, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="text-xs"
+                        >
+                          {keyword}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* FAQs Information */}
+        {category.faqs && category.faqs.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Frequently Asked Questions</CardTitle>
+              <CardDescription>
+                Common questions and answers for this category
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {category.faqs.map((faq, index) => (
+                <div key={index} className="space-y-2 p-4 border rounded-lg">
+                  <div className="space-y-1">
+                    <span className="text-sm font-medium text-blue-600">
+                      Q{index + 1}: {faq.question}
+                    </span>
+                    <p className="text-sm text-muted-foreground">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Timestamps */}
         <Card>
           <CardHeader>

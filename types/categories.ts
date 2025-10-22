@@ -20,8 +20,13 @@ export interface Category {
   seoTitle?: string;
   seoDescription?: string;
   seoSlug?: string;
+  coreKeywords?: string[];
   semanticKeywords1?: string[];
   semanticKeywords2?: string[];
+  faqs?: Array<{
+    question: string;
+    answer: string;
+  }>;
   createdAt: string;
   updatedAt: string;
   fullPath?: string;
@@ -61,6 +66,13 @@ export interface CreateCategoryRequest {
   seoTitle?: string;
   seoDescription?: string;
   seoSlug?: string;
+  coreKeywords?: string[];
+  semanticKeywords1?: string[];
+  semanticKeywords2?: string[];
+  faqs?: Array<{
+    question: string;
+    answer: string;
+  }>;
 }
 
 export interface UpdateCategoryRequest {
@@ -76,6 +88,13 @@ export interface UpdateCategoryRequest {
   seoTitle?: string;
   seoDescription?: string;
   seoSlug?: string;
+  coreKeywords?: string[];
+  semanticKeywords1?: string[];
+  semanticKeywords2?: string[];
+  faqs?: Array<{
+    question: string;
+    answer: string;
+  }>;
 }
 
 export interface AssignProductRequest {

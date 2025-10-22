@@ -21,6 +21,7 @@ import { ArrowLeft, Save, Plus } from "lucide-react";
 import { categoriesService } from "@/services";
 import { CreateCategoryRequest, Category } from "@/types";
 import { toast } from "sonner";
+import { TagInput } from "@/components/ui/tag-input";
 
 export default function NewCategoryPage() {
   const router = useRouter();
@@ -38,6 +39,10 @@ export default function NewCategoryPage() {
     seoTitle: "",
     seoDescription: "",
     seoSlug: "",
+    coreKeywords: [],
+    semanticKeywords1: [],
+    semanticKeywords2: [],
+    faqs: [],
   });
 
   // Load parent category data if parentId is provided
@@ -74,6 +79,7 @@ export default function NewCategoryPage() {
     field: keyof CreateCategoryRequest,
     value: any
   ) => {
+    console.log("handleInputChange called:", field, value);
     setFormData((prev) => {
       const newData = {
         ...prev,
@@ -85,6 +91,7 @@ export default function NewCategoryPage() {
         newData.seoSlug = generateSlug(value);
       }
 
+      console.log("Updated form data:", newData);
       return newData;
     });
   };
@@ -99,6 +106,7 @@ export default function NewCategoryPage() {
 
     try {
       setLoading(true);
+      console.log("Form data being sent:", formData);
       const response = await categoriesService.createCategory(formData);
 
       if (response.status === "success") {
@@ -137,6 +145,10 @@ export default function NewCategoryPage() {
           seoTitle: "",
           seoDescription: "",
           seoSlug: "",
+          coreKeywords: [],
+          semanticKeywords1: [],
+          semanticKeywords2: [],
+          faqs: [],
         });
       } else {
         toast.error(response.message || "Failed to create category");
@@ -330,6 +342,133 @@ export default function NewCategoryPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Keywords Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Keywords</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                <TagInput
+                  id="coreKeywords"
+                  label="Core Keywords"
+                  value={formData.coreKeywords || []}
+                  onChange={(keywords) =>
+                    handleInputChange("coreKeywords", keywords)
+                  }
+                  placeholder="Type and press Enter to add core keywords"
+                  maxTags={20}
+                  maxLength={50}
+                  disabled={loading}
+                  description="Primary keywords for this category"
+                />
+
+                <TagInput
+                  id="semanticKeywords1"
+                  label="Semantic Keywords 1"
+                  value={formData.semanticKeywords1 || []}
+                  onChange={(keywords) =>
+                    handleInputChange("semanticKeywords1", keywords)
+                  }
+                  placeholder="Type and press Enter to add semantic keywords"
+                  maxTags={20}
+                  maxLength={50}
+                  disabled={loading}
+                  description="Related keywords for better SEO"
+                />
+
+                <TagInput
+                  id="semanticKeywords2"
+                  label="Semantic Keywords 2"
+                  value={formData.semanticKeywords2 || []}
+                  onChange={(keywords) =>
+                    handleInputChange("semanticKeywords2", keywords)
+                  }
+                  placeholder="Type and press Enter to add semantic keywords"
+                  maxTags={20}
+                  maxLength={50}
+                  disabled={loading}
+                  description="Additional related keywords"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* FAQs Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Frequently Asked Questions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.faqs?.map((faq, index) => (
+                <div key={index} className="space-y-4 p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">FAQ {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newFaqs =
+                          formData.faqs?.filter((_, i) => i !== index) || [];
+                        handleInputChange("faqs", newFaqs);
+                      }}
+                      disabled={loading}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`faq-question-${index}`}>Question</Label>
+                    <Input
+                      id={`faq-question-${index}`}
+                      value={faq.question}
+                      onChange={(e) => {
+                        const newFaqs = [...(formData.faqs || [])];
+                        newFaqs[index] = { ...faq, question: e.target.value };
+                        handleInputChange("faqs", newFaqs);
+                      }}
+                      placeholder="Enter the question"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`faq-answer-${index}`}>Answer</Label>
+                    <Textarea
+                      id={`faq-answer-${index}`}
+                      value={faq.answer}
+                      onChange={(e) => {
+                        const newFaqs = [...(formData.faqs || [])];
+                        newFaqs[index] = { ...faq, answer: e.target.value };
+                        handleInputChange("faqs", newFaqs);
+                      }}
+                      placeholder="Enter the answer"
+                      rows={3}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const newFaqs = [
+                    ...(formData.faqs || []),
+                    { question: "", answer: "" },
+                  ];
+                  handleInputChange("faqs", newFaqs);
+                }}
+                disabled={loading}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add FAQ
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Form Actions */}
           <div className="flex items-center justify-end gap-2">

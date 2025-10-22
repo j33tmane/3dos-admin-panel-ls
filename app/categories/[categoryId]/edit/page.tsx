@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Plus } from "lucide-react";
 import { categoriesService } from "@/services";
 import { Category, UpdateCategoryRequest } from "@/types";
 import { toast } from "sonner";
+import { TagInput } from "@/components/ui/tag-input";
 
 export default function EditCategoryPage() {
   const router = useRouter();
@@ -31,6 +32,10 @@ export default function EditCategoryPage() {
     seoTitle: "",
     seoDescription: "",
     seoSlug: "",
+    coreKeywords: [],
+    semanticKeywords1: [],
+    semanticKeywords2: [],
+    faqs: [],
   });
 
   // Load category data
@@ -62,6 +67,10 @@ export default function EditCategoryPage() {
             seoTitle: categoryData.seoTitle || "",
             seoDescription: categoryData.seoDescription || "",
             seoSlug: categoryData.seoSlug || "",
+            coreKeywords: categoryData.coreKeywords || [],
+            semanticKeywords1: categoryData.semanticKeywords1 || [],
+            semanticKeywords2: categoryData.semanticKeywords2 || [],
+            faqs: categoryData.faqs || [],
           });
 
           // Fetch parent category if it exists
@@ -124,6 +133,7 @@ export default function EditCategoryPage() {
     field: keyof UpdateCategoryRequest,
     value: any
   ) => {
+    console.log("handleInputChange called:", field, value);
     setFormData((prev) => {
       const newData = {
         ...prev,
@@ -135,6 +145,7 @@ export default function EditCategoryPage() {
         newData.seoSlug = generateSlug(value);
       }
 
+      console.log("Updated form data:", newData);
       return newData;
     });
   };
@@ -149,6 +160,7 @@ export default function EditCategoryPage() {
 
     try {
       setLoading(true);
+      console.log("Form data being sent:", formData);
       const response = await categoriesService.updateCategory(
         categoryId,
         formData
@@ -451,6 +463,133 @@ export default function EditCategoryPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Keywords Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Keywords</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-3">
+                <TagInput
+                  id="coreKeywords"
+                  label="Core Keywords"
+                  value={formData.coreKeywords || []}
+                  onChange={(keywords) =>
+                    handleInputChange("coreKeywords", keywords)
+                  }
+                  placeholder="Type and press Enter to add core keywords"
+                  maxTags={20}
+                  maxLength={50}
+                  disabled={loading}
+                  description="Primary keywords for this category"
+                />
+
+                <TagInput
+                  id="semanticKeywords1"
+                  label="Semantic Keywords 1"
+                  value={formData.semanticKeywords1 || []}
+                  onChange={(keywords) =>
+                    handleInputChange("semanticKeywords1", keywords)
+                  }
+                  placeholder="Type and press Enter to add semantic keywords"
+                  maxTags={20}
+                  maxLength={50}
+                  disabled={loading}
+                  description="Related keywords for better SEO"
+                />
+
+                <TagInput
+                  id="semanticKeywords2"
+                  label="Semantic Keywords 2"
+                  value={formData.semanticKeywords2 || []}
+                  onChange={(keywords) =>
+                    handleInputChange("semanticKeywords2", keywords)
+                  }
+                  placeholder="Type and press Enter to add semantic keywords"
+                  maxTags={20}
+                  maxLength={50}
+                  disabled={loading}
+                  description="Additional related keywords"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* FAQs Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Frequently Asked Questions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {formData.faqs?.map((faq, index) => (
+                <div key={index} className="space-y-4 p-4 border rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium">FAQ {index + 1}</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const newFaqs =
+                          formData.faqs?.filter((_, i) => i !== index) || [];
+                        handleInputChange("faqs", newFaqs);
+                      }}
+                      disabled={loading}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`faq-question-${index}`}>Question</Label>
+                    <Input
+                      id={`faq-question-${index}`}
+                      value={faq.question}
+                      onChange={(e) => {
+                        const newFaqs = [...(formData.faqs || [])];
+                        newFaqs[index] = { ...faq, question: e.target.value };
+                        handleInputChange("faqs", newFaqs);
+                      }}
+                      placeholder="Enter the question"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`faq-answer-${index}`}>Answer</Label>
+                    <Textarea
+                      id={`faq-answer-${index}`}
+                      value={faq.answer}
+                      onChange={(e) => {
+                        const newFaqs = [...(formData.faqs || [])];
+                        newFaqs[index] = { ...faq, answer: e.target.value };
+                        handleInputChange("faqs", newFaqs);
+                      }}
+                      placeholder="Enter the answer"
+                      rows={3}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const newFaqs = [
+                    ...(formData.faqs || []),
+                    { question: "", answer: "" },
+                  ];
+                  handleInputChange("faqs", newFaqs);
+                }}
+                disabled={loading}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add FAQ
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Form Actions */}
           <div className="flex items-center justify-end gap-2">
